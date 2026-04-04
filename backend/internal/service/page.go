@@ -30,3 +30,7 @@ func (s *PageService) GetByID(ctx context.Context, id string) (*model.Page, erro
 func (s *PageService) Update(ctx context.Context, id, title, description string) (*model.Page, error) {
 	return s.repo.Update(ctx, id, title, description)
 }
+
+func (s *PageService) Delete(ctx context.Context, id string) error {
+	return s.repo.Delete(ctx, id)
+}

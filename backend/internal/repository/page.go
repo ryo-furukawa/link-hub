@@ -109,3 +109,21 @@ func (r *PageRepository) GetByID(ctx context.Context, id string) (*model.Page, e
 	}
 	return &p, nil
 }
+
+func (r *PageRepository) Delete(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE pages SET deleted_at=? WHERE id=? AND deleted_at IS NULL
+	`, now, id)
+	if err != nil {
+		return fmt.Errorf("delete page: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("delete page rows affected: %w", err)
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

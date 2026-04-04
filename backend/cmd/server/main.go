@@ -46,6 +46,7 @@ func main() {
 	mux.HandleFunc("POST /api/pages", pageHandler.Create)
 	mux.HandleFunc("GET /api/pages/{id}", pageHandler.Get)
 	mux.HandleFunc("PATCH /api/pages/{id}", pageHandler.Update)
+	mux.HandleFunc("DELETE /api/pages/{id}", pageHandler.Delete)
 
 	server := &http.Server{
 		Addr:         cfg.Addr,
