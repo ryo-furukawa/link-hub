@@ -8,6 +8,9 @@ import (
 
 	"github.com/ryo-furukawa/link-hub/internal/config"
 	"github.com/ryo-furukawa/link-hub/internal/db"
+	"github.com/ryo-furukawa/link-hub/internal/handler"
+	"github.com/ryo-furukawa/link-hub/internal/repository"
+	"github.com/ryo-furukawa/link-hub/internal/service"
 )
 
 func main() {
@@ -31,9 +34,15 @@ func main() {
 	}
 	logger.Info("migration done")
 
+	pageRepo := repository.NewPageRepository(database)
+	pageSvc := service.NewPageService(pageRepo)
+	pageHandler := handler.NewPageHandler(pageSvc)
+
 	mux := http.NewServeMux()
 	// ヘルスチェック
 	mux.HandleFunc("GET /healthz", healthHandler)
+	// pages
+	mux.HandleFunc("GET /api/pages", pageHandler.List)
 
 	server := &http.Server{
 		Addr:         cfg.Addr,
