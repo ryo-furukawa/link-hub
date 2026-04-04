@@ -65,3 +65,16 @@ func (r *PageRepository) List(ctx context.Context) ([]model.Page, error) {
 
 	return pages, nil
 }
+
+func (r *PageRepository) GetByID(ctx context.Context, id string) (*model.Page, error) {
+	var p model.Page
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, title, description, created_at, updated_at
+		FROM pages
+		WHERE id = ? AND deleted_at IS NULL
+	`, id).Scan(&p.ID, &p.Title, &p.Description, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("get page by id: %w", err)
+	}
+	return &p, nil
+}

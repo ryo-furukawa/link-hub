@@ -44,6 +44,7 @@ func main() {
 	// pages
 	mux.HandleFunc("GET /api/pages", pageHandler.List)
 	mux.HandleFunc("POST /api/pages", pageHandler.Create)
+	mux.HandleFunc("GET /api/pages/{id}", pageHandler.Get)
 
 	server := &http.Server{
 		Addr:         cfg.Addr,

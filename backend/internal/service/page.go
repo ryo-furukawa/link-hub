@@ -22,3 +22,7 @@ func (s *PageService) List(ctx context.Context) ([]model.Page, error) {
 func (s *PageService) Create(ctx context.Context, title, description string) (*model.Page, error) {
 	return s.repo.Create(ctx, title, description)
 }
+
+func (s *PageService) GetByID(ctx context.Context, id string) (*model.Page, error) {
+	return s.repo.GetByID(ctx, id)
+}
