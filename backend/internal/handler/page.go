@@ -61,6 +61,36 @@ func (h *PageHandler) Get(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(page)
 }
 
+func (h *PageHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var req struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(req.Title) == "" {
+		http.Error(w, `{"error":"title is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	page, err := h.svc.Update(r.Context(), id, req.Title, req.Description)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+			return
+		}
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(page)
+}
+
 func (h *PageHandler) List(w http.ResponseWriter, r *http.Request) {
 	pages, err := h.svc.List(r.Context())
 	if err != nil {
