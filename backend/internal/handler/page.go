@@ -91,6 +91,21 @@ func (h *PageHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(page)
 }
 
+func (h *PageHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+			return
+		}
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *PageHandler) List(w http.ResponseWriter, r *http.Request) {
 	pages, err := h.svc.List(r.Context())
 	if err != nil {
