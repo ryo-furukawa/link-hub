@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Page, Section, Source } from '../types/pages';
+import type { LocalPage as Page, Section, Source } from '../types/pages';
 import { generateId } from '../lib/id';
 import { formatDateTime } from '../lib/date';
 

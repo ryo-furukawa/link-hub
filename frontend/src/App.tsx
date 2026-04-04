@@ -13,10 +13,11 @@ import {
 } from 'lucide-react';
 import SourceRow from './components/SourceRow';
 import { usePages } from './hooks/usePages';
-import type { Page, Section } from './types/pages';
+import { usePageList } from './hooks/usePageList';
+import type { LocalPage, Section } from './types/pages';
 
 // --- Initial Data ---
-const INITIAL_PAGES: Page[] = [
+const INITIAL_PAGES: LocalPage[] = [
   {
     id: '1',
     title: 'デザインシステム刷新プロジェクト',
@@ -40,6 +41,7 @@ const INITIAL_PAGES: Page[] = [
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: apiPages = [], isLoading } = usePageList();
   const {
     pages,
     selectedPage,
@@ -185,16 +187,20 @@ export default function App() {
         <aside className="w-72 border-r border-slate-200 bg-white overflow-y-auto hidden md:block">
           <div className="p-4 space-y-1">
             <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 px-2 text-center">PROJECT PAGES</h2>
-            {filteredPages.map(page => (
-              <div
-                key={page.id}
-                onClick={() => setSelectedPageId(page.id)}
-                className={`p-3 rounded-xl cursor-pointer transition-all ${selectedPageId === page.id ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}
-              >
-                <h3 className="font-bold text-sm truncate">{page.title}</h3>
-                <div className="flex items-center gap-2 mt-1 opacity-60 text-[10px] font-mono"><Clock className="w-3 h-3" />{page.updatedAt}</div>
-              </div>
-            ))}
+            {isLoading && <p className="text-xs text-slate-400 text-center">読み込み中...</p>}
+            {apiPages
+              .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map(page => (
+                <div
+                  key={page.id}
+                  onClick={() => setSelectedPageId(page.id)}
+                  className={`p-3 rounded-xl cursor-pointer transition-all ${selectedPageId === page.id ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}
+                >
+                  <h3 className="font-bold text-sm truncate">{page.title}</h3>
+                  <div className="flex items-center gap-2 mt-1 opacity-60 text-[10px] font-mono"><Clock className="w-3 h-3" />{page.updated_at.slice(0, 10)}</div>
+                </div>
+              ))
+            }
           </div>
         </aside>
 
