@@ -18,3 +18,7 @@ func NewPageService(repo *repository.PageRepository) *PageService {
 func (s *PageService) List(ctx context.Context) ([]model.Page, error) {
 	return s.repo.List(ctx)
 }
+
+func (s *PageService) Create(ctx context.Context, title, description string) (*model.Page, error) {
+	return s.repo.Create(ctx, title, description)
+}

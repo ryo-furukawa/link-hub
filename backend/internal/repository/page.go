@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/ryo-furukawa/link-hub/internal/model"
 )
 
@@ -14,6 +16,27 @@ type PageRepository struct {
 
 func NewPageRepository(db *sql.DB) *PageRepository {
 	return &PageRepository{db: db}
+}
+
+func (r *PageRepository) Create(ctx context.Context, title, description string) (*model.Page, error) {
+	id := uuid.NewString()
+	now := time.Now().UTC()
+
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO pages (id, title, description, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?)
+	`, id, title, description, now, now)
+	if err != nil {
+		return nil, fmt.Errorf("create page: %w", err)
+	}
+
+	return &model.Page{
+		ID:          id,
+		Title:       title,
+		Description: description,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}, nil
 }
 
 func (r *PageRepository) List(ctx context.Context) ([]model.Page, error) {
