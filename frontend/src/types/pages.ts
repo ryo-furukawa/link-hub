@@ -12,7 +12,17 @@ export type Section = {
   sources: Source[];
 };
 
+// バックエンドAPIのレスポンス型
 export type Page = {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+};
+
+// フロントエンドのローカル状態用（既存UI互換）
+export type LocalPage = {
   id: string;
   title: string;
   description: string;
