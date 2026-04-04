@@ -47,6 +47,7 @@ func main() {
 	mux.HandleFunc("GET /api/pages/{id}", pageHandler.Get)
 	mux.HandleFunc("PATCH /api/pages/{id}", pageHandler.Update)
 	mux.HandleFunc("DELETE /api/pages/{id}", pageHandler.Delete)
+	mux.HandleFunc("PATCH /api/pages/{id}/restore", pageHandler.Restore)
 
 	server := &http.Server{
 		Addr:         cfg.Addr,

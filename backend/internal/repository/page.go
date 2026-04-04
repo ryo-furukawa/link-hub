@@ -127,3 +127,21 @@ func (r *PageRepository) Delete(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (r *PageRepository) Restore(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE pages SET deleted_at=NULL, updated_at=? WHERE id=? AND deleted_at IS NOT NULL
+	`, now, id)
+	if err != nil {
+		return fmt.Errorf("restore page: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("restore page rows affected: %w", err)
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

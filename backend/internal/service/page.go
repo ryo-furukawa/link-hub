@@ -34,3 +34,7 @@ func (s *PageService) Update(ctx context.Context, id, title, description string)
 func (s *PageService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
 }
+
+func (s *PageService) Restore(ctx context.Context, id string) error {
+	return s.repo.Restore(ctx, id)
+}
