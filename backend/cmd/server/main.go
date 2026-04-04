@@ -1,27 +1,46 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/ryo-furukawa/link-hub/internal/config"
+	"github.com/ryo-furukawa/link-hub/internal/db"
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	cfg := config.Load()
+
+	database, err := db.OpenSQLite(cfg.DBPath)
+	if err != nil {
+		logger.Error("db open failed", "error", err)
+		os.Exit(1)
+	}
+	defer database.Close()
+
+	logger.Info("db connected", "path", cfg.DBPath)
+
 	mux := http.NewServeMux()
 	// ヘルスチェック
-	mux.HandleFunc("GET /health", healthHandler)
+	mux.HandleFunc("GET /healthz", healthHandler)
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         cfg.Addr,
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
-	log.Printf("server is status on %s", server.Addr)
+	logger.Info("server starting", "addr", server.Addr)
 
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("server failed: %v", err)
+		logger.Error("server failed", "error", err)
+		os.Exit(1)
 	}
 }
 
