@@ -25,6 +25,12 @@ func main() {
 
 	logger.Info("db connected", "path", cfg.DBPath)
 
+	if err := db.RunMigrations(database, cfg.MigrationsPath); err != nil {
+		logger.Error("migration failed", "error", err)
+		os.Exit(1)
+	}
+	logger.Info("migration done")
+
 	mux := http.NewServeMux()
 	// ヘルスチェック
 	mux.HandleFunc("GET /healthz", healthHandler)
