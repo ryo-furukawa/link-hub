@@ -14,7 +14,9 @@ import {
 import SourceRow from './components/SourceRow';
 import { usePages } from './hooks/usePages';
 import { usePageList } from './hooks/usePageList';
+import { useCreatePage } from './hooks/useCreatePage';
 import type { LocalPage, Section } from './types/pages';
+import { useForm } from 'react-hook-form';
 
 // --- Initial Data ---
 const INITIAL_PAGES: LocalPage[] = [
@@ -42,6 +44,8 @@ const INITIAL_PAGES: LocalPage[] = [
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: apiPages = [], isLoading } = usePageList();
+  const createPage = useCreatePage();
+  const createForm = useForm<{ title: string; description: string }>();
   const {
     pages,
     selectedPage,
@@ -70,16 +74,12 @@ export default function App() {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   // --- CRUD: Pages ---
-  const handleAddPage = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    addPage({
-      title: fd.get('title') as string,
-      description: fd.get('description') as string,
-      tags: (fd.get('tags') as string).split(',').map((t) => t.trim()).filter((t) => t),
-    });
-    setIsAddingPage(false);
-  };
+  const handleAddPage = createForm.handleSubmit((data) => {
+    createPage.mutate(
+      { title: data.title, description: data.description },
+      { onSuccess: () => { setIsAddingPage(false); createForm.reset(); } }
+    );
+  });
 
   // --- CRUD: Sections ---
   const handleAddSection = (e: React.FormEvent<HTMLFormElement>) => {
@@ -325,10 +325,24 @@ export default function App() {
                   <button type="button" onClick={() => setIsAddingPage(false)} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5"/></button>
                 </div>
                 <div className="p-8 space-y-5">
-                  <input name="title" required autoFocus className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="プロジェクトタイトル" />
-                  <textarea name="description" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-24" placeholder="簡単な説明..." />
-                  <input name="tags" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="タグ (カンマ区切り)" />
-                  <button type="submit" className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">ページを作成</button>
+                  <input
+                    {...createForm.register('title', { required: true })}
+                    autoFocus
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    placeholder="プロジェクトタイトル"
+                  />
+                  <textarea
+                    {...createForm.register('description')}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-24"
+                    placeholder="簡単な説明..."
+                  />
+                  <button
+                    type="submit"
+                    disabled={createPage.isPending}
+                    className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+                  >
+                    {createPage.isPending ? '作成中...' : 'ページを作成'}
+                  </button>
                 </div>
               </form>
             )}
