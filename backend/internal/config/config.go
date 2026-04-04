@@ -3,8 +3,9 @@ package config
 import "os"
 
 type Config struct {
-	Addr   string
-	DBPath string
+	Addr           string
+	DBPath         string
+	MigrationsPath string
 }
 
 func Load() Config {
@@ -15,8 +16,9 @@ func Load() Config {
 	}
 
 	return Config{
-		Addr:   addr,
-		DBPath: getEnv("DB_PATH", "linkhub.db"),
+		Addr:           addr,
+		DBPath:         getEnv("DB_PATH", "linkhub.db"),
+		MigrationsPath: getEnv("MIGRATIONS_PATH", "migrations"),
 	}
 }
 

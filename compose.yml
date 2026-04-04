@@ -8,6 +8,7 @@ services:
     environment:
       - DB_PATH=/app/data/app.db
       - PORT=8080
+      - MIGRATIONS_PATH=/app/migrations
 
   frontend:
     build: ./docker/frontend
