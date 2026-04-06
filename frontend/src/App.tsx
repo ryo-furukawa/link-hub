@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Search,
   Plus,
@@ -15,7 +15,9 @@ import SourceRow from './components/SourceRow';
 import { usePages } from './hooks/usePages';
 import { usePageList } from './hooks/usePageList';
 import { useCreatePage } from './hooks/useCreatePage';
-import type { LocalPage, Section } from './types/pages';
+import { useUpdatePage } from './hooks/useUpdatePage';
+import { useDeletePage } from './hooks/useDeletePage';
+import type { LocalPage, Page, Section } from './types/pages';
 import { useForm } from 'react-hook-form';
 
 // --- Initial Data ---
@@ -45,13 +47,16 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: apiPages = [], isLoading } = usePageList();
   const createPage = useCreatePage();
+  const updatePage = useUpdatePage();
+  const deletePage = useDeletePage();
   const createForm = useForm<{ title: string; description: string }>();
+  const editForm = useForm<{ title: string; description: string }>();
+  const [isEditingPage, setIsEditingPage] = useState(false);
+  const [editingPage, setEditingPage] = useState<Page | null>(null);
   const {
-    pages,
     selectedPage,
     selectedPageId,
     setSelectedPageId,
-    addPage,
     addSection,
     editSection,
     deleteSection,
@@ -159,10 +164,6 @@ export default function App() {
     setDragOverId(null);
   };
 
-  const filteredPages = useMemo(() => {
-    return pages.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [pages, searchQuery]);
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       {/* Header */}
@@ -194,9 +195,25 @@ export default function App() {
                 <div
                   key={page.id}
                   onClick={() => setSelectedPageId(page.id)}
-                  className={`p-3 rounded-xl cursor-pointer transition-all ${selectedPageId === page.id ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}
+                  className={`group p-3 rounded-xl cursor-pointer transition-all ${selectedPageId === page.id ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}
                 >
-                  <h3 className="font-bold text-sm truncate">{page.title}</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-sm truncate flex-1">{page.title}</h3>
+                    <div className="hidden group-hover:flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => { setEditingPage(page); editForm.reset({ title: page.title, description: page.description }); setIsEditingPage(true); }}
+                        className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600"
+                      >
+                        <Settings2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => { if (confirm('削除しますか？')) { deletePage.mutate(page.id); if (selectedPageId === page.id) setSelectedPageId(null); } }}
+                        className="p-1 hover:bg-red-100 rounded text-slate-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2 mt-1 opacity-60 text-[10px] font-mono"><Clock className="w-3 h-3" />{page.updated_at.slice(0, 10)}</div>
                 </div>
               ))
@@ -312,6 +329,45 @@ export default function App() {
           )}
         </section>
       </main>
+
+      {/* --- Page Edit Modal --- */}
+      {isEditingPage && editingPage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <form onSubmit={editForm.handleSubmit((data) => {
+              updatePage.mutate(
+                { id: editingPage.id, title: data.title, description: data.description },
+                { onSuccess: () => { setIsEditingPage(false); setEditingPage(null); } }
+              );
+            })}>
+              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 className="font-bold text-xl text-slate-800 tracking-tight">ページを編集</h2>
+                <button type="button" onClick={() => setIsEditingPage(false)} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5"/></button>
+              </div>
+              <div className="p-8 space-y-5">
+                <input
+                  {...editForm.register('title', { required: true })}
+                  autoFocus
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="プロジェクトタイトル"
+                />
+                <textarea
+                  {...editForm.register('description')}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-24"
+                  placeholder="簡単な説明..."
+                />
+                <button
+                  type="submit"
+                  disabled={updatePage.isPending}
+                  className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+                >
+                  {updatePage.isPending ? '更新中...' : '更新'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* --- Modals --- */}
       {(isAddingPage || isAddingSection || isAddingSource || isEditingSection || isMovingSource) && (
