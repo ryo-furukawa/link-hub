@@ -42,6 +42,10 @@ func main() {
 	sourceSvc := service.NewSourceService(sourceRepo)
 	sourceHandler := handler.NewSourceHandler(sourceSvc)
 
+	sectionRepo := repository.NewSectionRepository(database)
+	sectionSvc := service.NewSectionService(sectionRepo)
+	sectionHandler := handler.NewSectionHandler(sectionSvc)
+
 	mux := http.NewServeMux()
 	// ヘルスチェック
 	mux.HandleFunc("GET /healthz", healthHandler)
@@ -52,6 +56,11 @@ func main() {
 	mux.HandleFunc("PATCH /api/pages/{id}", pageHandler.Update)
 	mux.HandleFunc("DELETE /api/pages/{id}", pageHandler.Delete)
 	mux.HandleFunc("PATCH /api/pages/{id}/restore", pageHandler.Restore)
+	// sections
+	mux.HandleFunc("GET /api/pages/{id}/sections", sectionHandler.List)
+	mux.HandleFunc("POST /api/pages/{id}/sections", sectionHandler.Create)
+	mux.HandleFunc("PATCH /api/sections/{id}", sectionHandler.Update)
+	mux.HandleFunc("DELETE /api/sections/{id}", sectionHandler.Delete)
 	// sources
 	mux.HandleFunc("GET /api/pages/{id}/sources", sourceHandler.List)
 	mux.HandleFunc("POST /api/pages/{id}/sources", sourceHandler.Create)
