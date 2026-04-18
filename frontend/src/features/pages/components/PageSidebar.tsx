@@ -49,7 +49,7 @@ export default function PageSidebar({
     .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter(p =>
       selectedTagIds.size === 0 ||
-      [...selectedTagIds].every(tid => p.tags.some(t => t.id === tid))
+      [...selectedTagIds].some(tid => p.tags.some(t => t.id === tid))
     );
 
   return (
