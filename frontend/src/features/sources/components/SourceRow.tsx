@@ -19,7 +19,7 @@ export default function SourceRow({
   onMove: (sourceId: string, fromSectionId: string | null) => void;
   onEdit: (src: Source) => void;
   onDelete: (sectionId: string | null, sourceId: string) => void;
-  onDropOnSource: (draggedId: string, targetId: string, sectionId: string | null, after: boolean) => void;
+  onDropOnSource: (draggedId: string, targetId: string, sectionId: string | null, after: boolean, isSameArea: boolean) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 

@@ -98,6 +98,17 @@ func (r *SectionRepository) Update(ctx context.Context, id, name string) (*model
 	return &s, nil
 }
 
+func (r *SectionRepository) Reorder(ctx context.Context, sectionIDs []string) error {
+	now := time.Now().UTC()
+	for i, id := range sectionIDs {
+		_, err := r.db.ExecContext(ctx, `UPDATE sections SET position=?, updated_at=? WHERE id=?`, i, now, id)
+		if err != nil {
+			return fmt.Errorf("reorder section: %w", err)
+		}
+	}
+	return nil
+}
+
 func (r *SectionRepository) Delete(ctx context.Context, id string) error {
 	result, err := r.db.ExecContext(ctx, `
 		DELETE FROM sections WHERE id=?
