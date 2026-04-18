@@ -10,6 +10,7 @@ import {
   GripVertical,
   X,
   Settings2,
+  Tag as TagIcon,
 } from 'lucide-react';
 import SourceRow from './components/SourceRow';
 import { usePages } from './hooks/usePages';
@@ -26,6 +27,11 @@ import { useCreateSection } from './hooks/useCreateSection';
 import { useUpdateSection } from './hooks/useUpdateSection';
 import { useDeleteSection } from './hooks/useDeleteSection';
 import { useReorderSources } from './hooks/useReorderSources';
+import { useTagList } from './hooks/useTagList';
+import { usePageTagList } from './hooks/usePageTagList';
+import { useCreateTag } from './hooks/useCreateTag';
+import { useAttachTag } from './hooks/useAttachTag';
+import { useDetachTag } from './hooks/useDetachTag';
 import type { LocalPage, Page, Section, Source } from './types/pages';
 import { useForm } from 'react-hook-form';
 
@@ -81,6 +87,13 @@ export default function App() {
   const updateSource = useUpdateSource(selectedPageId ?? '');
   const deleteSourceMutation = useDeleteSource(selectedPageId ?? '');
   const reorderSources = useReorderSources(selectedPageId ?? '');
+  const { data: allTags = [] } = useTagList();
+  const { data: pageTags = [] } = usePageTagList(selectedPageId ?? '');
+  const createTag = useCreateTag();
+  const attachTag = useAttachTag(selectedPageId ?? '');
+  const detachTag = useDetachTag(selectedPageId ?? '');
+  const [isManagingTags, setIsManagingTags] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
   const [editingSource, setEditingSource] = useState<Source | null>(null);
   const editSourceForm = useForm<{ title: string; url: string; memo: string; content: string }>();
   useEffect(() => {
@@ -319,6 +332,22 @@ export default function App() {
                 <h2 className="text-4xl font-black text-slate-800 tracking-tight">{selectedPage.title}</h2>
                 <p className="mt-3 text-slate-500 leading-relaxed text-lg">{selectedPage.description}</p>
 
+                {/* Tags */}
+                <div className="mt-6 flex flex-wrap items-center gap-2">
+                  {pageTags.map(tag => (
+                    <span key={tag.id} className="flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold border border-indigo-100">
+                      <TagIcon className="w-3 h-3" />
+                      {tag.name}
+                      <button type="button" onClick={() => detachTag.mutate({ pageId: selectedPageId!, tagId: tag.id })} className="ml-1 hover:text-red-500 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <button onClick={() => setIsManagingTags(true)} className="flex items-center gap-1 px-3 py-1 border border-dashed border-slate-300 text-slate-400 rounded-full text-xs hover:border-indigo-400 hover:text-indigo-500 transition-all">
+                    <Plus className="w-3 h-3" /> タグ追加
+                  </button>
+                </div>
+
                 <div className="mt-8 flex flex-wrap gap-3">
                   <button onClick={() => { setActiveSectionId(null); setIsAddingSource(true); }} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95">
                     <Plus className="w-4 h-4" /> ソースを追加
@@ -417,6 +446,63 @@ export default function App() {
           )}
         </section>
       </main>
+
+      {/* --- Tag Manage Modal --- */}
+      {isManagingTags && selectedPageId && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h2 className="font-bold text-xl text-slate-800">タグを管理</h2>
+              <button type="button" onClick={() => { setIsManagingTags(false); setNewTagName(''); }} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-8 space-y-5">
+              {/* 新規タグ作成 */}
+              <div className="flex gap-2">
+                <input
+                  value={newTagName}
+                  onChange={e => setNewTagName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newTagName.trim()) {
+                      createTag.mutate(newTagName.trim(), { onSuccess: () => setNewTagName('') });
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                  placeholder="新しいタグ名..."
+                />
+                <button
+                  type="button"
+                  disabled={!newTagName.trim() || createTag.isPending}
+                  onClick={() => createTag.mutate(newTagName.trim(), { onSuccess: () => setNewTagName('') })}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  作成
+                </button>
+              </div>
+              {/* 全タグ一覧・付与トグル */}
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allTags.length === 0 && <p className="text-center text-slate-300 text-xs py-4">タグがありません</p>}
+                {allTags.map(tag => {
+                  const attached = pageTags.some(t => t.id === tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => attached
+                        ? detachTag.mutate({ pageId: selectedPageId, tagId: tag.id })
+                        : attachTag.mutate({ pageId: selectedPageId, tagId: tag.id })
+                      }
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-sm font-bold ${attached ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-slate-100 text-slate-500 hover:border-indigo-200 hover:bg-slate-50'}`}
+                    >
+                      <span className="flex items-center gap-2"><TagIcon className="w-3 h-3" />{tag.name}</span>
+                      {attached && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">付与済み</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- Page Edit Modal --- */}
       {isEditingPage && editingPage && (

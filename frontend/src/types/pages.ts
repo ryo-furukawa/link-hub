@@ -30,6 +30,12 @@ export type Page = {
   updated_at: string;
 };
 
+export type Tag = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
 // フロントエンドのローカル状態用（既存UI互換）
 export type LocalPage = {
   id: string;
