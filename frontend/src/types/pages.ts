@@ -26,6 +26,7 @@ export type Page = {
   id: string;
   title: string;
   description: string;
+  tags: Tag[];
   created_at: string;
   updated_at: string;
 };

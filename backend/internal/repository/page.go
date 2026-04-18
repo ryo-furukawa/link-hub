@@ -72,28 +72,50 @@ func (r *PageRepository) Update(ctx context.Context, id, title, description stri
 
 func (r *PageRepository) List(ctx context.Context) ([]model.Page, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, title, description, created_at, updated_at
-		FROM pages
-		WHERE deleted_at IS NULL
-		ORDER BY created_at DESC
+		SELECT p.id, p.title, p.description, p.created_at, p.updated_at,
+		       t.id, t.name, t.created_at
+		FROM pages p
+		LEFT JOIN page_tags pt ON pt.page_id = p.id
+		LEFT JOIN tags t ON t.id = pt.tag_id
+		WHERE p.deleted_at IS NULL
+		ORDER BY p.created_at DESC, t.name
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("list pages: %w", err)
 	}
 	defer rows.Close()
 
-	var pages []model.Page
+	pageMap := make(map[string]*model.Page)
+	var order []string
+
 	for rows.Next() {
 		var p model.Page
-		if err := rows.Scan(&p.ID, &p.Title, &p.Description, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		var tagID, tagName sql.NullString
+		var tagCreatedAt sql.NullTime
+		if err := rows.Scan(&p.ID, &p.Title, &p.Description, &p.CreatedAt, &p.UpdatedAt, &tagID, &tagName, &tagCreatedAt); err != nil {
 			return nil, fmt.Errorf("scan page: %w", err)
 		}
-		pages = append(pages, p)
+		if _, exists := pageMap[p.ID]; !exists {
+			p.Tags = []model.Tag{}
+			pageMap[p.ID] = &p
+			order = append(order, p.ID)
+		}
+		if tagID.Valid {
+			pageMap[p.ID].Tags = append(pageMap[p.ID].Tags, model.Tag{
+				ID:        tagID.String,
+				Name:      tagName.String,
+				CreatedAt: tagCreatedAt.Time,
+			})
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
 
+	pages := make([]model.Page, 0, len(order))
+	for _, id := range order {
+		pages = append(pages, *pageMap[id])
+	}
 	return pages, nil
 }
 
