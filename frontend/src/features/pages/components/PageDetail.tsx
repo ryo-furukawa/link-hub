@@ -20,6 +20,7 @@ import SectionEditModal from '../../sections/components/SectionEditModal';
 import TagChips from '../../tags/components/TagChips';
 import TagManageModal from '../../tags/components/TagManageModal';
 import PageEditModal from './PageEditModal';
+import SourceDetailPanel from '../../sources/components/SourceDetailPanel';
 
 import type { Section, Source } from '../../../types/pages';
 
@@ -43,6 +44,7 @@ export default function PageDetail({ pageId }: { pageId: string }) {
   const [editingSource, setEditingSource] = useState<Source | null>(null);
   const [movingSource, setMovingSource] = useState<{ sourceId: string; fromSectionId: string | null } | null>(null);
   const [isManagingTags, setIsManagingTags] = useState(false);
+  const [viewingSource, setViewingSource] = useState<Source | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [sectionDragOverId, setSectionDragOverId] = useState<string | null>(null);
 
@@ -185,6 +187,7 @@ export default function PageDetail({ pageId }: { pageId: string }) {
               onEdit={setEditingSource}
               onDelete={(_secId, srcId) => deleteSource.mutate(srcId)}
               onDropOnSource={handleDropOnSource}
+              onView={setViewingSource}
             />
           ))}
           {apiSources.filter(s => s.section_id === null).length === 0 && (
@@ -214,9 +217,16 @@ export default function PageDetail({ pageId }: { pageId: string }) {
             onDeleteSource={(_secId, srcId) => deleteSource.mutate(srcId)}
             onSectionDragStart={handleSectionDragStart}
             onSectionDrop={handleSectionDrop}
+            onViewSource={setViewingSource}
           />
         ))}
       </div>
+
+      <SourceDetailPanel
+        source={viewingSource}
+        onClose={() => setViewingSource(null)}
+        onEdit={(src) => { setViewingSource(null); setEditingSource(src); }}
+      />
 
       {/* Modals */}
       {isEditingPage && <PageEditModal page={page} onClose={() => setIsEditingPage(false)} />}

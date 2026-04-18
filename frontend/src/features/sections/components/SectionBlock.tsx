@@ -20,6 +20,7 @@ export default function SectionBlock({
   onDeleteSource,
   onSectionDragStart,
   onSectionDrop,
+  onViewSource,
 }: {
   section: Section;
   sources: Source[];
@@ -37,6 +38,7 @@ export default function SectionBlock({
   onDeleteSource: (sectionId: string | null, sourceId: string) => void;
   onSectionDragStart: (e: React.DragEvent, sectionId: string) => void;
   onSectionDrop: (e: React.DragEvent, targetSectionId: string) => void;
+  onViewSource?: (src: Source) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -86,6 +88,7 @@ export default function SectionBlock({
             onEdit={onEditSource}
             onDelete={onDeleteSource}
             onDropOnSource={onDropOnSource}
+            onView={onViewSource}
           />
         ))}
         {sources.length === 0 && (
