@@ -27,6 +27,14 @@ func (s *SourceService) Update(ctx context.Context, id, title string, url *strin
 	return s.repo.Update(ctx, id, title, url, memo, content, sectionID)
 }
 
+func (s *SourceService) Reorder(ctx context.Context, sourceIDs []string) error {
+	return s.repo.Reorder(ctx, sourceIDs)
+}
+
+func (s *SourceService) UpdatePosition(ctx context.Context, id string, position int) error {
+	return s.repo.UpdatePosition(ctx, id, position)
+}
+
 func (s *SourceService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
 }

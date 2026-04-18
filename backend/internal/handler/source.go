@@ -104,6 +104,50 @@ func (h *SourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(source)
 }
 
+func (h *SourceHandler) Reorder(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SourceIDs []string `json:"source_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.SourceIDs) == 0 {
+		http.Error(w, `{"error":"source_ids is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.svc.Reorder(r.Context(), req.SourceIDs); err != nil {
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *SourceHandler) UpdatePosition(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var req struct {
+		Position int `json:"position"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.svc.UpdatePosition(r.Context(), id, req.Position); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+			return
+		}
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *SourceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
