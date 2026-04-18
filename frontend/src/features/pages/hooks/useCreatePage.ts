@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Page } from '../types/pages'
+import type { Page } from '../../../types/pages'
 
 type CreatePageInput = {
   title: string
