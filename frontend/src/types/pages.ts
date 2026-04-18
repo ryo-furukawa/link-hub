@@ -14,8 +14,11 @@ export type Source = {
 
 export type Section = {
   id: string;
-  title: string;
-  sources: Source[];
+  page_id: string;
+  name: string;
+  position: number;
+  created_at: string;
+  updated_at: string;
 };
 
 // バックエンドAPIのレスポンス型

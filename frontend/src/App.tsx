@@ -21,6 +21,10 @@ import { useSourceList } from './hooks/useSourceList';
 import { useCreateSource } from './hooks/useCreateSource';
 import { useUpdateSource } from './hooks/useUpdateSource';
 import { useDeleteSource } from './hooks/useDeleteSource';
+import { useSectionList } from './hooks/useSectionList';
+import { useCreateSection } from './hooks/useCreateSection';
+import { useUpdateSection } from './hooks/useUpdateSection';
+import { useDeleteSection } from './hooks/useDeleteSection';
 import type { LocalPage, Page, Section, Source } from './types/pages';
 import { useForm } from 'react-hook-form';
 
@@ -66,7 +70,11 @@ export default function App() {
     moveSource,
   } = usePages(INITIAL_PAGES);
   const selectedPage = apiPages.find(p => p.id === selectedPageId) ?? null;
-  const selectedPageSections: Section[] = [];
+  const { data: apiSections = [] } = useSectionList(selectedPageId ?? '');
+  const createSection = useCreateSection(selectedPageId ?? '');
+  const updateSection = useUpdateSection(selectedPageId ?? '');
+  const deleteSectionMutation = useDeleteSection(selectedPageId ?? '');
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
   const { data: apiSources = [] } = useSourceList(selectedPageId ?? '');
   const createSource = useCreateSource(selectedPageId ?? '');
   const updateSource = useUpdateSource(selectedPageId ?? '');
@@ -88,7 +96,7 @@ export default function App() {
 
   // Target States
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
-  const [editingSectionData, setEditingSectionData] = useState<Section | null>(null);
+  const [editingSectionData, setEditingSectionData] = useState<Section | null>(null); // 削除予定・editingSection に移行中
   const [movingSourceData, setMovingSourceData] = useState<{ sourceId: string; fromSectionId: string | null } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
@@ -103,26 +111,30 @@ export default function App() {
   // --- CRUD: Sections ---
   const handleAddSection = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedPage) return;
+    if (!selectedPageId) return;
     const fd = new FormData(e.currentTarget);
-    const title = fd.get('sectionTitle') as string;
-    addSection(selectedPage.id, title);
-    setIsAddingSection(false);
+    const name = fd.get('sectionTitle') as string;
+    createSection.mutate(
+      { pageId: selectedPageId, name },
+      { onSuccess: () => setIsAddingSection(false) }
+    );
   };
 
   const handleEditSection = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedPage || !editingSectionData) return;
+    if (!selectedPageId || !editingSection) return;
     const fd = new FormData(e.currentTarget);
-    const newTitle = fd.get('editSectionTitle') as string;
-    editSection(selectedPage.id, editingSectionData.id, newTitle);
-    setIsEditingSection(false);
+    const name = fd.get('editSectionTitle') as string;
+    updateSection.mutate(
+      { id: editingSection.id, pageId: selectedPageId, name },
+      { onSuccess: () => { setEditingSection(null); setIsEditingSection(false); } }
+    );
   };
 
   const handleDeleteSection = (secId: string) => {
-    if (!selectedPage) return;
-    deleteSection(selectedPage.id, secId);
-    setIsEditingSection(false);
+    deleteSectionMutation.mutate(secId, {
+      onSuccess: () => setIsEditingSection(false),
+    });
   };
 
   // --- CRUD: Sources ---
@@ -158,9 +170,20 @@ export default function App() {
     );
   });
 
-  const handleMoveSource = (sourceId: string, fromSectionId: string | null, targetSecId: string) => {
-    if (!selectedPage) return;
-    moveSource(selectedPage.id, sourceId, fromSectionId, targetSecId);
+  const handleMoveSource = (sourceId: string, _fromSectionId: string | null, targetSecId: string) => {
+    if (!selectedPageId) return;
+    const src = apiSources.find(s => s.id === sourceId);
+    if (!src) return;
+    const sectionId = targetSecId === 'unclassified' ? null : targetSecId;
+    updateSource.mutate({
+      id: sourceId,
+      pageId: selectedPageId,
+      title: src.title,
+      url: src.url ?? undefined,
+      memo: src.memo,
+      content: src.content,
+      section_id: sectionId,
+    });
   };
 
   // --- Drag & Drop Handlers ---
@@ -298,25 +321,25 @@ export default function App() {
 
               {/* Sections Area */}
               <div className="space-y-6 pb-20">
-                {selectedPageSections.map(section => (
+                {apiSections.map(section => (
                   <div key={section.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group">
                     <div
-                      onClick={() => { setEditingSectionData(section); setIsEditingSection(true); }}
+                      onClick={() => { setEditingSection(section); setIsEditingSection(true); }}
                       className="px-6 py-4 bg-slate-50/30 border-b border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <GripVertical className="w-4 h-4 text-slate-300" />
                         <h3 className="font-bold text-slate-700 flex items-center gap-2 tracking-tight uppercase text-xs tracking-widest">
                           <ChevronDown className="w-4 h-4 text-indigo-500" />
-                          {section.title}
-                          <span className="text-[10px] font-normal text-slate-400 ml-2">({section.sources.length})</span>
+                          {section.name}
+                          <span className="text-[10px] font-normal text-slate-400 ml-2">({apiSources.filter(s => s.section_id === section.id).length})</span>
                         </h3>
                       </div>
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => { setActiveSectionId(section.id); setIsAddingSource(true); }} className="p-2 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors">
                           <Plus className="w-4 h-4" />
                         </button>
-                        <button onClick={() => { setEditingSectionData(section); setIsEditingSection(true); }} className="p-2 hover:bg-slate-200 text-slate-400 rounded-lg transition-colors">
+                        <button onClick={() => { setEditingSection(section); setIsEditingSection(true); }} className="p-2 hover:bg-slate-200 text-slate-400 rounded-lg transition-colors">
                           <Settings2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -498,19 +521,19 @@ export default function App() {
             )}
 
             {/* Section Edit Modal */}
-            {isEditingSection && editingSectionData && (
+            {isEditingSection && editingSection && (
               <form onSubmit={handleEditSection}>
                 <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                   <h2 className="font-bold text-xl text-slate-800">セクション編集</h2>
                   <button type="button" onClick={() => setIsEditingSection(false)} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5"/></button>
                 </div>
                 <div className="p-8 space-y-5">
-                  <input name="editSectionTitle" defaultValue={editingSectionData.title} required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  <input name="editSectionTitle" defaultValue={editingSection.name} required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
                   <div className="flex gap-3">
-                    <button type="button" onClick={() => handleDeleteSection(editingSectionData.id)} className="flex-1 py-4 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"><Trash2 className="w-4 h-4"/>削除</button>
+                    <button type="button" onClick={() => handleDeleteSection(editingSection.id)} className="flex-1 py-4 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"><Trash2 className="w-4 h-4"/>削除</button>
                     <button type="submit" className="flex-[2] py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all">更新</button>
                   </div>
-                  <p className="text-[10px] text-slate-400 text-center">※削除すると中のソースは未分類エリアに戻ります</p>
+                  <p className="text-[10px] text-slate-400 text-center">※削除するとセクション内のソースは未分類エリアに残ります</p>
                 </div>
               </form>
             )}
@@ -527,13 +550,13 @@ export default function App() {
                     <span className="font-bold text-slate-600 group-hover:text-indigo-700">ページ直下 (未分類)</span>
                     <ChevronDown className="w-4 h-4 text-slate-300" />
                   </button>
-                  {selectedPageSections.map(sec => (
+                  {apiSections.map(sec => (
                     <button
                       key={sec.id}
                       onClick={() => { handleMoveSource(movingSourceData.sourceId, movingSourceData.fromSectionId, sec.id); setIsMovingSource(false); }}
                       className="w-full p-4 text-left rounded-2xl hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 transition-all group flex items-center justify-between"
                     >
-                      <span className="font-bold text-slate-600 group-hover:text-indigo-700">{sec.title}</span>
+                      <span className="font-bold text-slate-600 group-hover:text-indigo-700">{sec.name}</span>
                       <ChevronDown className="w-4 h-4 text-slate-300" />
                     </button>
                   ))}

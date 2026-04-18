@@ -8,7 +8,7 @@ type UpdateSourceInput = {
   url?: string
   memo?: string
   content?: string
-  section_id?: string
+  section_id?: string | null
 }
 
 async function updateSource(input: UpdateSourceInput): Promise<Source> {
