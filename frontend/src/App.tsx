@@ -23,7 +23,14 @@ function PageDetailWrapper() {
 }
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (localStorage.getItem('viewMode') as ViewMode) ?? 'list'
+  );
+
+  const setAndSaveViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('viewMode', mode);
+  };
   const { data: apiPages = [], isLoading } = usePageList();
   const deletePage = useDeletePage();
   const navigate = useNavigate();
@@ -41,7 +48,7 @@ export default function App() {
   };
 
   const switchToGrid = () => {
-    setViewMode('grid');
+    setAndSaveViewMode('grid');
     navigate('/');
   };
 
@@ -56,7 +63,7 @@ export default function App() {
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-slate-100 rounded-lg p-1">
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => setAndSaveViewMode('list')}
               className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
               title="リスト表示"
             >
