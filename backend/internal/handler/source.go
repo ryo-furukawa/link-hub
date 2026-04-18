@@ -76,6 +76,7 @@ func (h *SourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Title     string  `json:"title"`
+		URL       *string `json:"url"`
 		Memo      *string `json:"memo"`
 		Content   *string `json:"content"`
 		SectionID *string `json:"section_id"`
@@ -89,7 +90,7 @@ func (h *SourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	source, err := h.svc.Update(r.Context(), id, req.Title, req.Memo, req.Content, req.SectionID)
+	source, err := h.svc.Update(r.Context(), id, req.Title, req.URL, req.Memo, req.Content, req.SectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)

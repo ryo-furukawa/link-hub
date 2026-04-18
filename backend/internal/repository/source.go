@@ -74,12 +74,12 @@ func (r *SourceRepository) ListByPageID(ctx context.Context, pageID string) ([]m
 	return sources, nil
 }
 
-func (r *SourceRepository) Update(ctx context.Context, id, title string, memo *string, content *string, sectionID *string) (*model.Source, error) {
+func (r *SourceRepository) Update(ctx context.Context, id, title string, url *string, memo *string, content *string, sectionID *string) (*model.Source, error) {
 	now := time.Now().UTC()
 
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE sources SET title=?, memo=?, content=?, section_id=?, updated_at=? WHERE id=?
-	`, title, lo.FromPtr(memo), lo.FromPtr(content), sectionID, now, id)
+		UPDATE sources SET title=?, url=?, memo=?, content=?, section_id=?, updated_at=? WHERE id=?
+	`, title, url, lo.FromPtr(memo), lo.FromPtr(content), sectionID, now, id)
 	if err != nil {
 		return nil, fmt.Errorf("update source: %w", err)
 	}
