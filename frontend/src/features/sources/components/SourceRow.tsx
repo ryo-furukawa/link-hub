@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ExternalLink, FileText, Link as LinkIcon, MoveHorizontal, Pencil, Trash2 } from 'lucide-react';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 import type { Source } from '../../../types/pages';
 
 export default function SourceRow({
@@ -24,6 +25,7 @@ export default function SourceRow({
   onView?: (src: Source) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div
@@ -81,10 +83,17 @@ export default function SourceRow({
             <ExternalLink className="w-4 h-4" />
           </a>
         )}
-        <button type="button" onClick={() => onDelete(sectionId, src.id)} className="p-2 text-slate-300 hover:text-red-500 rounded-lg hover:bg-white">
+        <button type="button" onClick={() => setConfirming(true)} className="p-2 text-slate-300 hover:text-red-500 rounded-lg hover:bg-white">
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
+      {confirming && (
+        <ConfirmDialog
+          message={`「${src.title}」を削除しますか？`}
+          onConfirm={() => { onDelete(sectionId, src.id); setConfirming(false); }}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </div>
   );
 }

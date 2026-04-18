@@ -11,6 +11,7 @@ import PageCreateModal from './features/pages/components/PageCreateModal';
 import PageEditModal from './features/pages/components/PageEditModal';
 import PageDetail from './features/pages/components/PageDetail';
 
+import ConfirmDialog from './components/ConfirmDialog';
 import type { Page } from './types/pages';
 
 type ViewMode = 'list' | 'grid';
@@ -39,12 +40,14 @@ export default function App() {
 
   const [isAddingPage, setIsAddingPage] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
+  const [deletingPage, setDeletingPage] = useState<Page | null>(null);
 
-  const handleDelete = (page: Page) => {
-    if (confirm('削除しますか？')) {
-      deletePage.mutate(page.id);
-      if (selectedPageId === page.id) navigate('/');
-    }
+  const handleDelete = (page: Page) => setDeletingPage(page);
+  const handleDeleteConfirm = () => {
+    if (!deletingPage) return;
+    deletePage.mutate(deletingPage.id);
+    if (selectedPageId === deletingPage.id) navigate('/');
+    setDeletingPage(null);
   };
 
   const switchToGrid = () => {
@@ -130,6 +133,7 @@ export default function App() {
 
       {isAddingPage && <PageCreateModal onClose={() => setIsAddingPage(false)} />}
       {editingPage && <PageEditModal page={editingPage} onClose={() => setEditingPage(null)} />}
+      {deletingPage && <ConfirmDialog message={`「${deletingPage.title}」を削除しますか？`} onConfirm={handleDeleteConfirm} onCancel={() => setDeletingPage(null)} />}
     </div>
   );
 }

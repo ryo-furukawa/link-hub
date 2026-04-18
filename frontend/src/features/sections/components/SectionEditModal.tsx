@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { useUpdateSection } from '../hooks/useUpdateSection';
 import { useDeleteSection } from '../hooks/useDeleteSection';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 import type { Section } from '../../../types/pages';
 
 export default function SectionEditModal({
@@ -14,16 +16,13 @@ export default function SectionEditModal({
 }) {
   const updateSection = useUpdateSection(pageId);
   const deleteSection = useDeleteSection(pageId);
+  const [confirming, setConfirming] = useState(false);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = fd.get('editSectionTitle') as string;
     updateSection.mutate({ id: section.id, pageId, name }, { onSuccess: onClose });
-  };
-
-  const onDelete = () => {
-    deleteSection.mutate(section.id, { onSuccess: onClose });
   };
 
   return (
@@ -37,7 +36,7 @@ export default function SectionEditModal({
           <div className="p-8 space-y-5">
             <input name="editSectionTitle" defaultValue={section.name} required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
             <div className="flex gap-3">
-              <button type="button" onClick={onDelete} className="flex-1 py-4 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2">
+              <button type="button" onClick={() => setConfirming(true)} className="flex-1 py-4 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2">
                 <Trash2 className="w-4 h-4" />削除
               </button>
               <button type="submit" className="flex-[2] py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all">更新</button>
@@ -46,6 +45,13 @@ export default function SectionEditModal({
           </div>
         </form>
       </div>
+      {confirming && (
+        <ConfirmDialog
+          message={`「${section.name}」を削除しますか？`}
+          onConfirm={() => deleteSection.mutate(section.id, { onSuccess: onClose })}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </div>
   );
 }
