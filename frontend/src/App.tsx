@@ -25,6 +25,7 @@ import { useSectionList } from './hooks/useSectionList';
 import { useCreateSection } from './hooks/useCreateSection';
 import { useUpdateSection } from './hooks/useUpdateSection';
 import { useDeleteSection } from './hooks/useDeleteSection';
+import { useReorderSources } from './hooks/useReorderSources';
 import type { LocalPage, Page, Section, Source } from './types/pages';
 import { useForm } from 'react-hook-form';
 
@@ -79,6 +80,7 @@ export default function App() {
   const createSource = useCreateSource(selectedPageId ?? '');
   const updateSource = useUpdateSource(selectedPageId ?? '');
   const deleteSourceMutation = useDeleteSource(selectedPageId ?? '');
+  const reorderSources = useReorderSources(selectedPageId ?? '');
   const [editingSource, setEditingSource] = useState<Source | null>(null);
   const editSourceForm = useForm<{ title: string; url: string; memo: string; content: string }>();
   useEffect(() => {
@@ -203,17 +205,51 @@ export default function App() {
     setDragOverId(targetId);
   };
 
+  const handleDropOnSource = (draggedId: string, targetId: string, sectionId: string | null, after: boolean, isSameArea: boolean) => {
+    if (!selectedPageId) return;
+
+    if (!isSameArea) {
+      // セクション間移動: ターゲットのセクションに移動
+      handleMoveSource(draggedId, null, sectionId ?? 'unclassified');
+      return;
+    }
+
+    // 同じエリア内: 並び替え
+    const areaSources = apiSources
+      .filter(s => sectionId ? s.section_id === sectionId : s.section_id === null)
+      .sort((a, b) => a.position - b.position);
+
+    const without = areaSources.filter(s => s.id !== draggedId);
+    const insertIndex = without.findIndex(s => s.id === targetId);
+    if (insertIndex === -1) return;
+
+    // after=true なら直後、false なら直前に挿入
+    without.splice(after ? insertIndex + 1 : insertIndex, 0, areaSources.find(s => s.id === draggedId)!);
+    reorderSources.mutate({ pageId: selectedPageId, sourceIds: without.map(s => s.id) });
+  };
+
   const handleDrop = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData("sourceId");
     const fromSectionId = e.dataTransfer.getData("fromSectionId") || null;
+    const isSameArea = fromSectionId === targetId || (!fromSectionId && targetId === 'unclassified');
 
-    if (fromSectionId === targetId || (!fromSectionId && targetId === 'unclassified')) {
-      setDragOverId(null);
-      return;
+    if (isSameArea) {
+      // 同じエリアへのドロップ = 末尾に移動
+      if (!selectedPageId) { setDragOverId(null); return; }
+      const sectionId = targetId === 'unclassified' ? null : targetId;
+      const areaSources = apiSources
+        .filter(s => sectionId ? s.section_id === sectionId : s.section_id === null)
+        .sort((a, b) => a.position - b.position);
+      const without = areaSources.filter(s => s.id !== sourceId);
+      const dragged = areaSources.find(s => s.id === sourceId);
+      if (dragged) {
+        without.push(dragged);
+        reorderSources.mutate({ pageId: selectedPageId, sourceIds: without.map(s => s.id) });
+      }
+    } else {
+      handleMoveSource(sourceId, fromSectionId, targetId);
     }
-
-    handleMoveSource(sourceId, fromSectionId, targetId);
     setDragOverId(null);
   };
 
@@ -311,6 +347,7 @@ export default function App() {
                       onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
                       onEdit={(src) => setEditingSource(src)}
                       onDelete={handleDeleteSource}
+                      onDropOnSource={(draggedId, targetId, secId, after, isSameArea) => handleDropOnSource(draggedId, targetId, secId, after, isSameArea)}
                     />
                   ))}
                   {apiSources.filter(s => s.section_id === null).length === 0 && (
@@ -356,6 +393,7 @@ export default function App() {
                           onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
                           onEdit={(src) => setEditingSource(src)}
                           onDelete={handleDeleteSource}
+                          onDropOnSource={(draggedId, targetId, secId, after, isSameArea) => handleDropOnSource(draggedId, targetId, secId, after, isSameArea)}
                         />
                       ))}
                       {apiSources.filter(s => s.section_id === section.id).length === 0 && (
