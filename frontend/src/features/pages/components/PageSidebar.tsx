@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Clock, Settings2, Trash2 } from 'lucide-react';
+import { Clock, Plus, Settings2, Trash2 } from 'lucide-react';
+import TagCreateModal from '../../tags/components/TagCreateModal';
 import type { Page, Tag } from '../../../types/pages';
 
 function getAllTags(pages: Page[]): Tag[] {
@@ -34,6 +35,7 @@ export default function PageSidebar({
   onDelete: (page: Page) => void;
 }) {
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
 
   const allTags = getAllTags(pages);
 
@@ -57,7 +59,7 @@ export default function PageSidebar({
       {allTags.length > 0 && (
         <div className="px-4 pt-4 pb-2 border-b border-slate-100">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">タグで絞り込み</p>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 items-center">
             {allTags.map(tag => (
               <button
                 key={tag.id}
@@ -71,6 +73,13 @@ export default function PageSidebar({
                 {tag.name}
               </button>
             ))}
+            <button
+              onClick={() => setIsCreatingTag(true)}
+              className="p-1 rounded-full border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+              title="タグを作成"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
           </div>
         </div>
       )}
@@ -113,6 +122,7 @@ export default function PageSidebar({
           <p className="text-xs text-slate-300 text-center pt-4">該当するページがありません</p>
         )}
       </div>
+      {isCreatingTag && <TagCreateModal onClose={() => setIsCreatingTag(false)} />}
     </aside>
   );
 }

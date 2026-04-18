@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Clock, Settings2, Trash2 } from 'lucide-react';
+import { Clock, Plus, Settings2, Trash2 } from 'lucide-react';
+import TagCreateModal from '../../tags/components/TagCreateModal';
 import type { Page, Tag } from '../../../types/pages';
 
 function getAllTags(pages: Page[]): Tag[] {
@@ -29,6 +30,7 @@ export default function PageGrid({
   onDelete: (page: Page) => void;
 }) {
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
   const allTags = getAllTags(pages);
 
   const toggleTag = (tagId: string) => {
@@ -52,23 +54,28 @@ export default function PageGrid({
 
   return (
     <div className="max-w-6xl mx-auto">
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-6">
-          {allTags.map(tag => (
-            <button
-              key={tag.id}
-              onClick={() => toggleTag(tag.id)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                selectedTagIds.has(tag.id)
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
-              }`}
-            >
-              {tag.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-1.5 mb-6">
+        {allTags.map(tag => (
+          <button
+            key={tag.id}
+            onClick={() => toggleTag(tag.id)}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+              selectedTagIds.has(tag.id)
+                ? 'bg-indigo-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+            }`}
+          >
+            {tag.name}
+          </button>
+        ))}
+        <button
+          onClick={() => setIsCreatingTag(true)}
+          className="p-1 rounded-full border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+          title="タグを作成"
+        >
+          <Plus className="w-3 h-3" />
+        </button>
+      </div>
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">{filtered.length} pages</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtered.map(page => (
@@ -109,6 +116,7 @@ export default function PageGrid({
           <p className="text-xs text-slate-300 col-span-full text-center pt-10">該当するページがありません</p>
         )}
       </div>
+      {isCreatingTag && <TagCreateModal onClose={() => setIsCreatingTag(false)} />}
     </div>
   );
 }
