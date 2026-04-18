@@ -152,7 +152,6 @@ export default function App() {
 
   const handleEditSource = editSourceForm.handleSubmit((data) => {
     if (!editingSource || !selectedPageId) return;
-    console.log('submit data', data);
     updateSource.mutate(
       { id: editingSource.id, pageId: selectedPageId, title: data.title, url: data.url, memo: data.memo, content: data.content },
       { onSuccess: () => { setEditingSource(null); editSourceForm.reset(); } }
@@ -287,7 +286,7 @@ export default function App() {
                       key={src.id} src={src} sectionId={null}
                       onDragStart={handleDragStart} onDragEnd={handleDragEnd}
                       onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
-                      onEdit={(src) => { console.log('onEdit', src); setEditingSource(src); }}
+                      onEdit={(src) => setEditingSource(src)}
                       onDelete={handleDeleteSource}
                     />
                   ))}
@@ -332,7 +331,7 @@ export default function App() {
                           key={src.id} src={src} sectionId={section.id}
                           onDragStart={handleDragStart} onDragEnd={handleDragEnd}
                           onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
-                          onEdit={(src) => { console.log('onEdit', src); setEditingSource(src); }}
+                          onEdit={(src) => setEditingSource(src)}
                           onDelete={handleDeleteSource}
                         />
                       ))}
