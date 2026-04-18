@@ -24,7 +24,7 @@ func (r *PageRepository) Create(ctx context.Context, title, description string) 
 
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO pages (id, title, description, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?)
+		VALUES ($1, $2, $3, $4, $5)
 	`, id, title, description, now, now)
 	if err != nil {
 		return nil, fmt.Errorf("create page: %w", err)
@@ -43,7 +43,7 @@ func (r *PageRepository) Update(ctx context.Context, id, title, description stri
 	now := time.Now().UTC()
 
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE pages SET title=?, description=?, updated_at=? WHERE id=? AND deleted_at IS NULL
+		UPDATE pages SET title=$1, description=$2, updated_at=$3 WHERE id=$4 AND deleted_at IS NULL
 	`, title, description, now, id)
 	if err != nil {
 		return nil, fmt.Errorf("update page: %w", err)
@@ -61,7 +61,7 @@ func (r *PageRepository) Update(ctx context.Context, id, title, description stri
 	err = r.db.QueryRowContext(ctx, `
 		SELECT id, title, description, created_at, updated_at
 		FROM pages
-		WHERE id=? AND deleted_at IS NULL
+		WHERE id=$1 AND deleted_at IS NULL
 	`, id).Scan(&p.ID, &p.Title, &p.Description, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("select updated page: %w", err)
@@ -124,7 +124,7 @@ func (r *PageRepository) GetByID(ctx context.Context, id string) (*model.Page, e
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, title, description, created_at, updated_at
 		FROM pages
-		WHERE id = ? AND deleted_at IS NULL
+		WHERE id = $1 AND deleted_at IS NULL
 	`, id).Scan(&p.ID, &p.Title, &p.Description, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("get page by id: %w", err)
@@ -135,7 +135,7 @@ func (r *PageRepository) GetByID(ctx context.Context, id string) (*model.Page, e
 func (r *PageRepository) Delete(ctx context.Context, id string) error {
 	now := time.Now().UTC()
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE pages SET deleted_at=? WHERE id=? AND deleted_at IS NULL
+		UPDATE pages SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL
 	`, now, id)
 	if err != nil {
 		return fmt.Errorf("delete page: %w", err)
@@ -153,7 +153,7 @@ func (r *PageRepository) Delete(ctx context.Context, id string) error {
 func (r *PageRepository) Restore(ctx context.Context, id string) error {
 	now := time.Now().UTC()
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE pages SET deleted_at=NULL, updated_at=? WHERE id=? AND deleted_at IS NOT NULL
+		UPDATE pages SET deleted_at=NULL, updated_at=$1 WHERE id=$2 AND deleted_at IS NOT NULL
 	`, now, id)
 	if err != nil {
 		return fmt.Errorf("restore page: %w", err)

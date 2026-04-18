@@ -40,7 +40,7 @@ func (r *TagRepository) Create(ctx context.Context, name string) (*model.Tag, er
 	id := uuid.NewString()
 	now := time.Now().UTC()
 
-	_, err := r.db.ExecContext(ctx, `INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?)`, id, name, now)
+	_, err := r.db.ExecContext(ctx, `INSERT INTO tags (id, name, created_at) VALUES ($1, $2, $3)`, id, name, now)
 	if err != nil {
 		return nil, fmt.Errorf("tag create: %w", err)
 	}
@@ -48,7 +48,7 @@ func (r *TagRepository) Create(ctx context.Context, name string) (*model.Tag, er
 }
 
 func (r *TagRepository) Delete(ctx context.Context, id string) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM tags WHERE id = ?`, id)
+	res, err := r.db.ExecContext(ctx, `DELETE FROM tags WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("tag delete: %w", err)
 	}
@@ -64,7 +64,7 @@ func (r *TagRepository) ListByPageID(ctx context.Context, pageID string) ([]mode
 		SELECT t.id, t.name, t.created_at
 		FROM tags t
 		INNER JOIN page_tags pt ON pt.tag_id = t.id
-		WHERE pt.page_id = ?
+		WHERE pt.page_id = $1
 		ORDER BY t.name
 	`, pageID)
 	if err != nil {
@@ -84,7 +84,7 @@ func (r *TagRepository) ListByPageID(ctx context.Context, pageID string) ([]mode
 }
 
 func (r *TagRepository) AttachToPage(ctx context.Context, pageID, tagID string) error {
-	_, err := r.db.ExecContext(ctx, `INSERT OR IGNORE INTO page_tags (page_id, tag_id) VALUES (?, ?)`, pageID, tagID)
+	_, err := r.db.ExecContext(ctx, `INSERT INTO page_tags (page_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, pageID, tagID)
 	if err != nil {
 		return fmt.Errorf("attach tag: %w", err)
 	}
@@ -92,7 +92,7 @@ func (r *TagRepository) AttachToPage(ctx context.Context, pageID, tagID string) 
 }
 
 func (r *TagRepository) DetachFromPage(ctx context.Context, pageID, tagID string) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM page_tags WHERE page_id = ? AND tag_id = ?`, pageID, tagID)
+	res, err := r.db.ExecContext(ctx, `DELETE FROM page_tags WHERE page_id = $1 AND tag_id = $2`, pageID, tagID)
 	if err != nil {
 		return fmt.Errorf("detach tag: %w", err)
 	}

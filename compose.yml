@@ -1,4 +1,15 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: linkhub
+      POSTGRES_PASSWORD: linkhub
+      POSTGRES_DB: linkhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   backend:
     build: ./docker/backend
     volumes:
@@ -6,9 +17,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DB_PATH=/app/data/app.db
+      - DATABASE_URL=postgres://linkhub:linkhub@postgres:5432/linkhub?sslmode=disable
       - PORT=8080
       - MIGRATIONS_PATH=/app/migrations
+    depends_on:
+      - postgres
 
   frontend:
     build: ./docker/frontend
@@ -20,3 +33,6 @@ services:
       - VITE_API_URL=http://backend:8080
     depends_on:
       - backend
+
+volumes:
+  postgres_data:
