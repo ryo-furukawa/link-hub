@@ -41,6 +41,7 @@ export default function SectionBlock({
   onViewSource?: (src: Source) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div
@@ -60,8 +61,11 @@ export default function SectionBlock({
           >
             <GripVertical className="w-4 h-4 text-slate-300 hover:text-slate-500" />
           </div>
-          <h3 className="font-bold text-slate-700 flex items-center gap-2 tracking-tight uppercase text-xs tracking-widest">
-            <ChevronDown className="w-4 h-4 text-indigo-500" />
+          <h3
+            className="font-bold text-slate-700 flex items-center gap-2 tracking-tight uppercase text-xs tracking-widest cursor-pointer select-none"
+            onClick={() => setIsCollapsed(v => !v)}
+          >
+            <ChevronDown className={`w-4 h-4 text-indigo-500 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
             {section.name}
             <span className="text-[10px] font-normal text-slate-400 ml-2">({sources.length})</span>
           </h3>
@@ -78,7 +82,7 @@ export default function SectionBlock({
       <div
         onDragOver={(e) => onDragOver(e, section.id)}
         onDrop={(e) => onDrop(e, section.id)}
-        className={`p-2 space-y-1 transition-colors min-h-[50px] ${dragOverId === section.id ? 'bg-indigo-50 ring-2 ring-inset ring-indigo-200' : ''}`}
+        className={`p-2 space-y-1 transition-colors min-h-[50px] ${dragOverId === section.id ? 'bg-indigo-50 ring-2 ring-inset ring-indigo-200' : ''} ${isCollapsed ? 'hidden' : ''}`}
       >
         {sources.map(src => (
           <SourceRow
