@@ -46,6 +46,10 @@ func main() {
 	sectionSvc := service.NewSectionService(sectionRepo)
 	sectionHandler := handler.NewSectionHandler(sectionSvc)
 
+	tagRepo := repository.NewTagRepository(database)
+	tagSvc := service.NewTagService(tagRepo)
+	tagHandler := handler.NewTagHandler(tagSvc)
+
 	mux := http.NewServeMux()
 	// ヘルスチェック
 	mux.HandleFunc("GET /healthz", healthHandler)
@@ -66,6 +70,15 @@ func main() {
 	mux.HandleFunc("POST /api/pages/{id}/sources", sourceHandler.Create)
 	mux.HandleFunc("PATCH /api/sources/{id}", sourceHandler.Update)
 	mux.HandleFunc("DELETE /api/sources/{id}", sourceHandler.Delete)
+	mux.HandleFunc("PATCH /api/sources/{id}/position", sourceHandler.UpdatePosition)
+	mux.HandleFunc("PATCH /api/pages/{id}/sources/reorder", sourceHandler.Reorder)
+	// tags
+	mux.HandleFunc("GET /api/tags", tagHandler.List)
+	mux.HandleFunc("POST /api/tags", tagHandler.Create)
+	mux.HandleFunc("DELETE /api/tags/{id}", tagHandler.Delete)
+	mux.HandleFunc("GET /api/pages/{id}/tags", tagHandler.ListByPage)
+	mux.HandleFunc("POST /api/pages/{id}/tags", tagHandler.AttachToPage)
+	mux.HandleFunc("DELETE /api/pages/{id}/tags/{tagId}", tagHandler.DetachFromPage)
 
 	server := &http.Server{
 		Addr:         cfg.Addr,

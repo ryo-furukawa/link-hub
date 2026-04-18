@@ -105,6 +105,40 @@ func (r *SourceRepository) Update(ctx context.Context, id, title string, url *st
 	return &s, nil
 }
 
+func (r *SourceRepository) Reorder(ctx context.Context, sourceIDs []string) error {
+	now := time.Now().UTC()
+	for i, id := range sourceIDs {
+		_, err := r.db.ExecContext(ctx, `
+			UPDATE sources SET position=?, updated_at=? WHERE id=?
+		`, i, now, id)
+		if err != nil {
+			return fmt.Errorf("reorder source: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *SourceRepository) UpdatePosition(ctx context.Context, id string, position int) error {
+	now := time.Now().UTC()
+
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE sources SET position=?, updated_at=? WHERE id=?
+	`, position, now, id)
+	if err != nil {
+		return fmt.Errorf("update source position: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("update source position rows affected: %w", err)
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
 func (r *SourceRepository) Delete(ctx context.Context, id string) error {
 	result, err := r.db.ExecContext(ctx, `
 		DELETE FROM sources WHERE id=?
