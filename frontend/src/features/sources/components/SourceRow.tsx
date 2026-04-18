@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ExternalLink, FileText, Link as LinkIcon, MoveHorizontal, Pencil, Trash2 } from 'lucide-react';
-import type { Source } from '../types/pages';
+import type { Source } from '../../../types/pages';
 
 export default function SourceRow({
   src,

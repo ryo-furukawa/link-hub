@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { Page } from '../types/pages'
+import type { Page } from '../../../types/pages'
 
 async function fetchPages(): Promise<Page[]> {
   const res = await fetch('/api/pages')

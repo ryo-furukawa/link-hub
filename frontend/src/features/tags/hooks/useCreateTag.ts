@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Tag } from '../types/pages'
+import type { Tag } from '../../../types/pages'
 
 async function createTag(name: string): Promise<Tag> {
   const res = await fetch('/api/tags', {

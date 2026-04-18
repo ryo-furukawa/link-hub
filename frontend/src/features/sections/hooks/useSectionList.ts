@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { Section } from '../types/pages'
+import type { Section } from '../../../types/pages'
 
 async function fetchSections(pageId: string): Promise<Section[]> {
   const res = await fetch(`/api/pages/${pageId}/sections`)

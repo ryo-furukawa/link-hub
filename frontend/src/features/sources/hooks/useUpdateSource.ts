@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Source } from '../types/pages'
+import type { Source } from '../../../types/pages'
 
 type UpdateSourceInput = {
   id: string
@@ -12,7 +12,7 @@ type UpdateSourceInput = {
 }
 
 async function updateSource(input: UpdateSourceInput): Promise<Source> {
-  const { id, pageId: _, ...body } = input
+  const { id, pageId: _, ...body } = input // eslint-disable-line @typescript-eslint/no-unused-vars
   const res = await fetch(`/api/sources/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

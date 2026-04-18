@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Source } from '../types/pages'
+import type { Source } from '../../../types/pages'
 
 type CreateSourceInput = {
   pageId: string
