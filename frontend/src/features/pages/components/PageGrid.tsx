@@ -1,5 +1,17 @@
+import { useState } from 'react';
 import { Clock, Settings2, Trash2 } from 'lucide-react';
-import type { Page } from '../../../types/pages';
+import type { Page, Tag } from '../../../types/pages';
+
+function getAllTags(pages: Page[]): Tag[] {
+  const seen = new Set<string>();
+  const tags: Tag[] = [];
+  for (const page of pages) {
+    for (const tag of page.tags) {
+      if (!seen.has(tag.id)) { seen.add(tag.id); tags.push(tag); }
+    }
+  }
+  return tags.sort((a, b) => a.name.localeCompare(b.name));
+}
 
 export default function PageGrid({
   pages,
@@ -16,9 +28,23 @@ export default function PageGrid({
   onEdit: (page: Page) => void;
   onDelete: (page: Page) => void;
 }) {
-  const filtered = pages.filter(p =>
-    p.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
+  const allTags = getAllTags(pages);
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTagIds(prev => {
+      const next = new Set(prev);
+      if (next.has(tagId)) { next.delete(tagId); } else { next.add(tagId); }
+      return next;
+    });
+  };
+
+  const filtered = pages
+    .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(p =>
+      selectedTagIds.size === 0 ||
+      [...selectedTagIds].some(tid => p.tags.some(t => t.id === tid))
+    );
 
   if (isLoading) {
     return <p className="text-xs text-slate-400 text-center pt-20">読み込み中...</p>;
@@ -26,6 +52,23 @@ export default function PageGrid({
 
   return (
     <div className="max-w-6xl mx-auto">
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-6">
+          {allTags.map(tag => (
+            <button
+              key={tag.id}
+              onClick={() => toggleTag(tag.id)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                selectedTagIds.has(tag.id)
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+              }`}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">{filtered.length} pages</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtered.map(page => (
