@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutGrid, Layers, List, Plus, Search } from 'lucide-react';
+import { LayoutGrid, Layers, List, Plus } from 'lucide-react';
 import { Routes, Route, useNavigate, useMatch } from 'react-router-dom';
 
 import { usePageList } from './features/pages/hooks/usePageList';
@@ -23,7 +23,6 @@ function PageDetailWrapper() {
 }
 
 export default function App() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const { data: apiPages = [], isLoading } = usePageList();
   const deletePage = useDeletePage();
@@ -53,14 +52,7 @@ export default function App() {
           <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-100"><Layers className="text-white w-5 h-5" /></div>
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 tracking-tight">LinkHub</h1>
         </div>
-        <div className="flex-1 max-w-xl mx-8 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <input
-            type="text" placeholder="タイトルで検索..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full focus:ring-2 focus:ring-indigo-500 text-sm outline-none transition-all"
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <div className="flex-1" />
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-slate-100 rounded-lg p-1">
             <button
@@ -90,7 +82,6 @@ export default function App() {
             <PageSidebar
               pages={apiPages}
               isLoading={isLoading}
-              searchQuery={searchQuery}
               selectedPageId={selectedPageId}
               onSelect={(id) => navigate(`/pages/${id}`)}
               onEdit={(page) => setEditingPage(page)}
@@ -120,7 +111,6 @@ export default function App() {
                 <PageGrid
                   pages={apiPages}
                   isLoading={isLoading}
-                  searchQuery={searchQuery}
                   onSelect={(id) => navigate(`/pages/${id}`)}
                   onEdit={(page) => setEditingPage(page)}
                   onDelete={handleDelete}

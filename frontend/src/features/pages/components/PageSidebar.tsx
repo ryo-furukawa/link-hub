@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Plus, Settings2, Trash2 } from 'lucide-react';
+import { Clock, Plus, Search, Settings2, Trash2 } from 'lucide-react';
 import TagCreateModal from '../../tags/components/TagCreateModal';
 import type { Page, Tag } from '../../../types/pages';
 
@@ -20,7 +20,6 @@ function getAllTags(pages: Page[]): Tag[] {
 export default function PageSidebar({
   pages,
   isLoading,
-  searchQuery,
   selectedPageId,
   onSelect,
   onEdit,
@@ -28,12 +27,12 @@ export default function PageSidebar({
 }: {
   pages: Page[];
   isLoading: boolean;
-  searchQuery: string;
   selectedPageId: string | null;
   onSelect: (id: string) => void;
   onEdit: (page: Page) => void;
   onDelete: (page: Page) => void;
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
   const [isCreatingTag, setIsCreatingTag] = useState(false);
 
@@ -56,6 +55,16 @@ export default function PageSidebar({
 
   return (
     <aside className="w-72 border-r border-slate-200 bg-white overflow-y-auto hidden md:flex md:flex-col">
+      <div className="px-4 pt-4 pb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
+          <input
+            type="text" placeholder="タイトルで検索..."
+            className="w-full pl-9 pr-3 py-2 bg-slate-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
       {allTags.length > 0 && (
         <div className="px-4 pt-4 pb-2 border-b border-slate-100">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">タグで絞り込み</p>

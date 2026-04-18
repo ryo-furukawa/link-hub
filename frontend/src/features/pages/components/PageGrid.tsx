@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Plus, Settings2, Trash2 } from 'lucide-react';
+import { Clock, Plus, Search, Settings2, Trash2 } from 'lucide-react';
 import TagCreateModal from '../../tags/components/TagCreateModal';
 import type { Page, Tag } from '../../../types/pages';
 
@@ -17,18 +17,17 @@ function getAllTags(pages: Page[]): Tag[] {
 export default function PageGrid({
   pages,
   isLoading,
-  searchQuery,
   onSelect,
   onEdit,
   onDelete,
 }: {
   pages: Page[];
   isLoading: boolean;
-  searchQuery: string;
   onSelect: (id: string) => void;
   onEdit: (page: Page) => void;
   onDelete: (page: Page) => void;
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const allTags = getAllTags(pages);
@@ -54,6 +53,14 @@ export default function PageGrid({
 
   return (
     <div className="max-w-6xl mx-auto">
+      <div className="relative mb-5">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <input
+          type="text" placeholder="タイトルで検索..."
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm outline-none transition-all shadow-sm"
+          value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
       <div className="flex flex-wrap items-center gap-1.5 mb-6">
         {allTags.map(tag => (
           <button
