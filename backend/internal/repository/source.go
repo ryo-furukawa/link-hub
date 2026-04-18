@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"github.com/ryo-furukawa/link-hub/internal/model"
 )
 
@@ -18,6 +19,7 @@ func NewSourceRepository(db *sql.DB) *SourceRepository {
 	return &SourceRepository{db: db}
 }
 
+
 func (r *SourceRepository) Create(ctx context.Context, pageID string, sectionID *string, sourceType string, url *string, title string, memo *string, content *string) (*model.Source, error) {
 	id := uuid.NewString()
 	now := time.Now().UTC()
@@ -25,7 +27,7 @@ func (r *SourceRepository) Create(ctx context.Context, pageID string, sectionID 
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO sources (id, page_id, section_id, type, url, title, memo, content, position, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-	`, id, pageID, sectionID, sourceType, url, title, memo, content, now, now)
+	`, id, pageID, sectionID, sourceType, url, title, lo.FromPtr(memo), lo.FromPtr(content), now, now)
 	if err != nil {
 		return nil, fmt.Errorf("create source: %w", err)
 	}
@@ -77,7 +79,7 @@ func (r *SourceRepository) Update(ctx context.Context, id, title string, memo *s
 
 	result, err := r.db.ExecContext(ctx, `
 		UPDATE sources SET title=?, memo=?, content=?, section_id=?, updated_at=? WHERE id=?
-	`, title, memo, content, sectionID, now, id)
+	`, title, lo.FromPtr(memo), lo.FromPtr(content), sectionID, now, id)
 	if err != nil {
 		return nil, fmt.Errorf("update source: %w", err)
 	}
