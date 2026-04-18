@@ -23,8 +23,8 @@ func (s *SourceService) ListByPageID(ctx context.Context, pageID string) ([]mode
 	return s.repo.ListByPageID(ctx, pageID)
 }
 
-func (s *SourceService) Update(ctx context.Context, id, title string, memo *string, content *string, sectionID *string) (*model.Source, error) {
-	return s.repo.Update(ctx, id, title, memo, content, sectionID)
+func (s *SourceService) Update(ctx context.Context, id, title string, url *string, memo *string, content *string, sectionID *string) (*model.Source, error) {
+	return s.repo.Update(ctx, id, title, url, memo, content, sectionID)
 }
 
 func (s *SourceService) Delete(ctx context.Context, id string) error {

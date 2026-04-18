@@ -1,4 +1,4 @@
-import { ExternalLink, FileText, Link as LinkIcon, MoveHorizontal, Trash2 } from 'lucide-react';
+import { ExternalLink, FileText, Link as LinkIcon, MoveHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Source } from '../types/pages';
 
 export default function SourceRow({
@@ -7,6 +7,7 @@ export default function SourceRow({
   onDragStart,
   onDragEnd,
   onMove,
+  onEdit,
   onDelete,
 }: {
   src: Source;
@@ -14,6 +15,7 @@ export default function SourceRow({
   onDragStart: (e: React.DragEvent, sourceId: string, sectionId: string | null) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onMove: (sourceId: string, fromSectionId: string | null) => void;
+  onEdit: (src: Source) => void;
   onDelete: (sectionId: string | null, sourceId: string) => void;
 }) {
   return (
@@ -28,7 +30,7 @@ export default function SourceRow({
           {src.type === 'link' ? <LinkIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
         </div>
         <div className="truncate">
-          <p className="font-bold text-sm text-slate-700 truncate">{src.label}</p>
+          <p className="font-bold text-sm text-slate-700 truncate">{src.title}</p>
           <p className="text-[11px] text-slate-400 truncate mt-0.5 font-mono italic">
             {src.type === 'link' ? src.url : src.content}
           </p>
@@ -42,6 +44,14 @@ export default function SourceRow({
           title="セクション移動"
         >
           <MoveHorizontal className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onEdit(src)}
+          className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-white"
+          title="編集"
+        >
+          <Pencil className="w-4 h-4" />
         </button>
         {src.type === 'link' && (
           <a href={src.url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-white">

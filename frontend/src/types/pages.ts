@@ -1,9 +1,15 @@
 export type Source = {
   id: string;
-  type: 'link' | 'text';
-  label: string;
-  url?: string;
-  content?: string;
+  page_id: string;
+  section_id: string | null;
+  type: 'link' | 'note';
+  url: string | null;
+  title: string;
+  memo: string;
+  content: string;
+  position: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Section = {

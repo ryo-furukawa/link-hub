@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -17,7 +17,11 @@ import { usePageList } from './hooks/usePageList';
 import { useCreatePage } from './hooks/useCreatePage';
 import { useUpdatePage } from './hooks/useUpdatePage';
 import { useDeletePage } from './hooks/useDeletePage';
-import type { LocalPage, Page, Section } from './types/pages';
+import { useSourceList } from './hooks/useSourceList';
+import { useCreateSource } from './hooks/useCreateSource';
+import { useUpdateSource } from './hooks/useUpdateSource';
+import { useDeleteSource } from './hooks/useDeleteSource';
+import type { LocalPage, Page, Section, Source } from './types/pages';
 import { useForm } from 'react-hook-form';
 
 // --- Initial Data ---
@@ -54,16 +58,26 @@ export default function App() {
   const [isEditingPage, setIsEditingPage] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
   const {
-    selectedPage,
     selectedPageId,
     setSelectedPageId,
     addSection,
     editSection,
     deleteSection,
-    addSource,
-    deleteSource,
     moveSource,
   } = usePages(INITIAL_PAGES);
+  const selectedPage = apiPages.find(p => p.id === selectedPageId) ?? null;
+  const selectedPageSections: Section[] = [];
+  const { data: apiSources = [] } = useSourceList(selectedPageId ?? '');
+  const createSource = useCreateSource(selectedPageId ?? '');
+  const updateSource = useUpdateSource(selectedPageId ?? '');
+  const deleteSourceMutation = useDeleteSource(selectedPageId ?? '');
+  const [editingSource, setEditingSource] = useState<Source | null>(null);
+  const editSourceForm = useForm<{ title: string; url: string; memo: string; content: string }>();
+  useEffect(() => {
+    if (editingSource) {
+      editSourceForm.reset({ title: editingSource.title, url: editingSource.url ?? '', memo: editingSource.memo, content: editingSource.content });
+    }
+  }, [editingSource]);
 
   // Modal States
   const [isAddingPage, setIsAddingPage] = useState(false);
@@ -114,19 +128,35 @@ export default function App() {
   // --- CRUD: Sources ---
   const handleAddSource = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedPage) return;
+    if (!selectedPageId) return;
     const fd = new FormData(e.currentTarget);
-    const type = fd.get('sourceType') as 'link' | 'text';
-    const label = fd.get('sourceLabel') as string;
+    const type = fd.get('sourceType') as 'link' | 'note';
+    const title = fd.get('sourceLabel') as string;
     const content = fd.get('sourceContent') as string;
-    addSource(selectedPage.id, activeSectionId, { type, label, content });
-    setIsAddingSource(false);
+    createSource.mutate(
+      {
+        pageId: selectedPageId,
+        type,
+        title,
+        url: type === 'link' ? content : undefined,
+        content: type === 'note' ? content : undefined,
+        section_id: activeSectionId ?? undefined,
+      },
+      { onSuccess: () => setIsAddingSource(false) }
+    );
   };
 
-  const handleDeleteSource = (secId: string | null, srcId: string) => {
-    if (!selectedPage) return;
-    deleteSource(selectedPage.id, secId, srcId);
+  const handleDeleteSource = (_secId: string | null, srcId: string) => {
+    deleteSourceMutation.mutate(srcId);
   };
+
+  const handleEditSource = editSourceForm.handleSubmit((data) => {
+    if (!editingSource || !selectedPageId) return;
+    updateSource.mutate(
+      { id: editingSource.id, pageId: selectedPageId, title: data.title, url: data.url, memo: data.memo, content: data.content },
+      { onSuccess: () => { setEditingSource(null); editSourceForm.reset(); } }
+    );
+  });
 
   const handleMoveSource = (sourceId: string, fromSectionId: string | null, targetSecId: string) => {
     if (!selectedPage) return;
@@ -227,11 +257,6 @@ export default function App() {
             <div className="max-w-4xl mx-auto space-y-8">
               {/* Page Header */}
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-                <div className="flex gap-2 mb-4">
-                  {selectedPage.tags.map(tag => (
-                    <span key={tag} className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded">#{tag}</span>
-                  ))}
-                </div>
                 <h2 className="text-4xl font-black text-slate-800 tracking-tight">{selectedPage.title}</h2>
                 <p className="mt-3 text-slate-500 leading-relaxed text-lg">{selectedPage.description}</p>
 
@@ -256,15 +281,16 @@ export default function App() {
                   onDrop={(e) => handleDrop(e, 'unclassified')}
                   className={`rounded-2xl border-2 border-dashed transition-all p-2 ${dragOverId === 'unclassified' ? 'bg-indigo-50 border-indigo-400 scale-[1.01]' : 'bg-white border-transparent shadow-sm'}`}
                 >
-                  {selectedPage.unclassifiedSources.map(src => (
+                  {apiSources.filter(s => s.section_id === null).map(src => (
                     <SourceRow
                       key={src.id} src={src} sectionId={null}
                       onDragStart={handleDragStart} onDragEnd={handleDragEnd}
                       onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
+                      onEdit={(src) => setEditingSource(src)}
                       onDelete={handleDeleteSource}
                     />
                   ))}
-                  {selectedPage.unclassifiedSources.length === 0 && (
+                  {apiSources.filter(s => s.section_id === null).length === 0 && (
                     <div className="py-8 text-center text-slate-300 text-xs italic">ここにソースをドラッグ</div>
                   )}
                 </div>
@@ -272,7 +298,7 @@ export default function App() {
 
               {/* Sections Area */}
               <div className="space-y-6 pb-20">
-                {selectedPage.sections.map(section => (
+                {selectedPageSections.map(section => (
                   <div key={section.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group">
                     <div
                       onClick={() => { setEditingSectionData(section); setIsEditingSection(true); }}
@@ -300,15 +326,16 @@ export default function App() {
                       onDrop={(e) => handleDrop(e, section.id)}
                       className={`p-2 space-y-1 transition-colors min-h-[50px] ${dragOverId === section.id ? 'bg-indigo-50 ring-2 ring-inset ring-indigo-200' : ''}`}
                     >
-                      {section.sources.map(src => (
+                      {apiSources.filter(s => s.section_id === section.id).map(src => (
                         <SourceRow
-                      key={src.id} src={src} sectionId={section.id}
-                      onDragStart={handleDragStart} onDragEnd={handleDragEnd}
-                      onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
-                      onDelete={handleDeleteSource}
-                    />
-                  ))}
-                      {section.sources.length === 0 && (
+                          key={src.id} src={src} sectionId={section.id}
+                          onDragStart={handleDragStart} onDragEnd={handleDragEnd}
+                          onMove={(sourceId, fromSectionId) => { setMovingSourceData({ sourceId, fromSectionId }); setIsMovingSource(true); }}
+                          onEdit={(src) => setEditingSource(src)}
+                          onDelete={handleDeleteSource}
+                        />
+                      ))}
+                      {apiSources.filter(s => s.section_id === section.id).length === 0 && (
                         <div className="py-4 text-center text-slate-200 text-[10px] uppercase tracking-tighter">Empty Section</div>
                       )}
                     </div>
@@ -369,6 +396,48 @@ export default function App() {
         </div>
       )}
 
+      {/* --- Source Edit Modal --- */}
+      {editingSource && (
+        <div key={editingSource.id} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <form onSubmit={handleEditSource}>
+              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 className="font-bold text-xl text-slate-800 tracking-tight">ソースを編集</h2>
+                <button type="button" onClick={() => setEditingSource(null)} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5"/></button>
+              </div>
+              <div className="p-8 space-y-5">
+                <input
+                  {...editSourceForm.register('title', { required: true })}
+                  autoFocus
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="タイトル"
+                />
+                {editingSource.type === 'link' ? (
+                  <input
+                    {...editSourceForm.register('url')}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    placeholder="URL"
+                  />
+                ) : (
+                  <textarea
+                    {...editSourceForm.register('content')}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-32"
+                    placeholder="内容"
+                  />
+                )}
+                <button
+                  type="submit"
+                  disabled={updateSource.isPending}
+                  className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+                >
+                  {updateSource.isPending ? '更新中...' : '更新'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* --- Modals --- */}
       {(isAddingPage || isAddingSection || isAddingSource || isEditingSection || isMovingSource) && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -417,7 +486,7 @@ export default function App() {
                       <div className="text-center py-2 rounded-lg peer-checked:bg-white peer-checked:shadow-sm text-sm font-bold text-slate-500 peer-checked:text-indigo-600 transition-all">リンク</div>
                     </label>
                     <label className="flex-1 cursor-pointer">
-                      <input type="radio" name="sourceType" value="text" className="hidden peer" />
+                      <input type="radio" name="sourceType" value="note" className="hidden peer" />
                       <div className="text-center py-2 rounded-lg peer-checked:bg-white peer-checked:shadow-sm text-sm font-bold text-slate-500 peer-checked:text-indigo-600 transition-all">メモ</div>
                     </label>
                   </div>
@@ -458,7 +527,7 @@ export default function App() {
                     <span className="font-bold text-slate-600 group-hover:text-indigo-700">ページ直下 (未分類)</span>
                     <ChevronDown className="w-4 h-4 text-slate-300" />
                   </button>
-                  {selectedPage.sections.map(sec => (
+                  {selectedPageSections.map(sec => (
                     <button
                       key={sec.id}
                       onClick={() => { handleMoveSource(movingSourceData.sourceId, movingSourceData.fromSectionId, sec.id); setIsMovingSource(false); }}
