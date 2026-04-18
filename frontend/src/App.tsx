@@ -41,6 +41,11 @@ export default function App() {
     }
   };
 
+  const switchToGrid = () => {
+    setViewMode('grid');
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
@@ -66,7 +71,7 @@ export default function App() {
               <List className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={switchToGrid}
               className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
               title="グリッド表示"
             >
@@ -110,14 +115,19 @@ export default function App() {
           </>
         ) : (
           <section className="flex-1 overflow-y-auto p-6 md:p-10">
-            <PageGrid
-              pages={apiPages}
-              isLoading={isLoading}
-              searchQuery={searchQuery}
-              onSelect={(id) => { navigate(`/pages/${id}`); setViewMode('list'); }}
-              onEdit={(page) => setEditingPage(page)}
-              onDelete={handleDelete}
-            />
+            <Routes>
+              <Route path="/" element={
+                <PageGrid
+                  pages={apiPages}
+                  isLoading={isLoading}
+                  searchQuery={searchQuery}
+                  onSelect={(id) => navigate(`/pages/${id}`)}
+                  onEdit={(page) => setEditingPage(page)}
+                  onDelete={handleDelete}
+                />
+              } />
+              <Route path="/pages/:id" element={<PageDetailWrapper />} />
+            </Routes>
           </section>
         )}
       </main>
