@@ -103,7 +103,6 @@ export default function App() {
                     </div>
                     <div className="text-center">
                       <h3 className="text-2xl font-bold text-slate-700">プロジェクトを選んで開始</h3>
-                      <p className="mt-2 text-slate-400 max-w-xs leading-relaxed">ソースはドラッグ＆ドロップで<br/>自由に整理できます。</p>
                     </div>
                   </div>
                 } />
