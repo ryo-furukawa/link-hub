@@ -11,6 +11,7 @@ export default function SourceRow({
   onEdit,
   onDelete,
   onDropOnSource,
+  onView,
 }: {
   src: Source;
   sectionId?: string | null;
@@ -20,6 +21,7 @@ export default function SourceRow({
   onEdit: (src: Source) => void;
   onDelete: (sectionId: string | null, sourceId: string) => void;
   onDropOnSource: (draggedId: string, targetId: string, sectionId: string | null, after: boolean, isSameArea: boolean) => void;
+  onView?: (src: Source) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -43,6 +45,7 @@ export default function SourceRow({
         }
         setIsDragOver(false);
       }}
+      onClick={() => onView?.(src)}
       className={`flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl group/item transition-all border bg-white cursor-grab active:cursor-grabbing shadow-sm mb-1 ${isDragOver ? 'border-indigo-400 bg-indigo-50' : 'border-transparent hover:border-slate-100'}`}
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -56,7 +59,7 @@ export default function SourceRow({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
           onClick={() => onMove(src.id, sectionId)}
