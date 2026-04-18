@@ -24,7 +24,7 @@ func (r *SectionRepository) Create(ctx context.Context, pageID, name string) (*m
 
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO sections (id, page_id, name, position, created_at, updated_at)
-		VALUES (?, ?, ?, 0, ?, ?)
+		VALUES ($1, $2, $3, 0, $4, $5)
 	`, id, pageID, name, now, now)
 	if err != nil {
 		return nil, fmt.Errorf("create section: %w", err)
@@ -44,7 +44,7 @@ func (r *SectionRepository) ListByPageID(ctx context.Context, pageID string) ([]
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, page_id, name, position, created_at, updated_at
 		FROM sections
-		WHERE page_id = ?
+		WHERE page_id = $1
 		ORDER BY position ASC
 	`, pageID)
 	if err != nil {
@@ -71,7 +71,7 @@ func (r *SectionRepository) Update(ctx context.Context, id, name string) (*model
 	now := time.Now().UTC()
 
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE sections SET name=?, updated_at=? WHERE id=?
+		UPDATE sections SET name=$1, updated_at=$2 WHERE id=$3
 	`, name, now, id)
 	if err != nil {
 		return nil, fmt.Errorf("update section: %w", err)
@@ -89,7 +89,7 @@ func (r *SectionRepository) Update(ctx context.Context, id, name string) (*model
 	err = r.db.QueryRowContext(ctx, `
 		SELECT id, page_id, name, position, created_at, updated_at
 		FROM sections
-		WHERE id=?
+		WHERE id=$1
 	`, id).Scan(&s.ID, &s.PageID, &s.Name, &s.Position, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("select updated section: %w", err)
@@ -101,7 +101,7 @@ func (r *SectionRepository) Update(ctx context.Context, id, name string) (*model
 func (r *SectionRepository) Reorder(ctx context.Context, sectionIDs []string) error {
 	now := time.Now().UTC()
 	for i, id := range sectionIDs {
-		_, err := r.db.ExecContext(ctx, `UPDATE sections SET position=?, updated_at=? WHERE id=?`, i, now, id)
+		_, err := r.db.ExecContext(ctx, `UPDATE sections SET position=$1, updated_at=$2 WHERE id=$3`, i, now, id)
 		if err != nil {
 			return fmt.Errorf("reorder section: %w", err)
 		}
@@ -111,7 +111,7 @@ func (r *SectionRepository) Reorder(ctx context.Context, sectionIDs []string) er
 
 func (r *SectionRepository) Delete(ctx context.Context, id string) error {
 	result, err := r.db.ExecContext(ctx, `
-		DELETE FROM sections WHERE id=?
+		DELETE FROM sections WHERE id=$1
 	`, id)
 	if err != nil {
 		return fmt.Errorf("delete section: %w", err)

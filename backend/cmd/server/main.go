@@ -19,14 +19,14 @@ func main() {
 
 	cfg := config.Load()
 
-	database, err := db.OpenSQLite(cfg.DBPath)
+	database, err := db.Open(cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("db open failed", "error", err)
 		os.Exit(1)
 	}
 	defer database.Close()
 
-	logger.Info("db connected", "path", cfg.DBPath)
+	logger.Info("db connected", "url", cfg.DatabaseURL)
 
 	if err := db.RunMigrations(database, cfg.MigrationsPath); err != nil {
 		logger.Error("migration failed", "error", err)

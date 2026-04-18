@@ -19,14 +19,13 @@ func NewSourceRepository(db *sql.DB) *SourceRepository {
 	return &SourceRepository{db: db}
 }
 
-
 func (r *SourceRepository) Create(ctx context.Context, pageID string, sectionID *string, sourceType string, url *string, title string, memo *string, content *string) (*model.Source, error) {
 	id := uuid.NewString()
 	now := time.Now().UTC()
 
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO sources (id, page_id, section_id, type, url, title, memo, content, position, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9, $10)
 	`, id, pageID, sectionID, sourceType, url, title, lo.FromPtr(memo), lo.FromPtr(content), now, now)
 	if err != nil {
 		return nil, fmt.Errorf("create source: %w", err)
@@ -51,7 +50,7 @@ func (r *SourceRepository) ListByPageID(ctx context.Context, pageID string) ([]m
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, page_id, section_id, type, url, title, memo, content, position, created_at, updated_at
 		FROM sources
-		WHERE page_id = ?
+		WHERE page_id = $1
 		ORDER BY position ASC
 	`, pageID)
 	if err != nil {
@@ -78,7 +77,7 @@ func (r *SourceRepository) Update(ctx context.Context, id, title string, url *st
 	now := time.Now().UTC()
 
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE sources SET title=?, url=?, memo=?, content=?, section_id=?, updated_at=? WHERE id=?
+		UPDATE sources SET title=$1, url=$2, memo=$3, content=$4, section_id=$5, updated_at=$6 WHERE id=$7
 	`, title, url, lo.FromPtr(memo), lo.FromPtr(content), sectionID, now, id)
 	if err != nil {
 		return nil, fmt.Errorf("update source: %w", err)
@@ -96,7 +95,7 @@ func (r *SourceRepository) Update(ctx context.Context, id, title string, url *st
 	err = r.db.QueryRowContext(ctx, `
 		SELECT id, page_id, section_id, type, url, title, memo, content, position, created_at, updated_at
 		FROM sources
-		WHERE id=?
+		WHERE id=$1
 	`, id).Scan(&s.ID, &s.PageID, &s.SectionID, &s.Type, &s.URL, &s.Title, &s.Memo, &s.Content, &s.Position, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("select updated source: %w", err)
@@ -109,7 +108,7 @@ func (r *SourceRepository) Reorder(ctx context.Context, sourceIDs []string) erro
 	now := time.Now().UTC()
 	for i, id := range sourceIDs {
 		_, err := r.db.ExecContext(ctx, `
-			UPDATE sources SET position=?, updated_at=? WHERE id=?
+			UPDATE sources SET position=$1, updated_at=$2 WHERE id=$3
 		`, i, now, id)
 		if err != nil {
 			return fmt.Errorf("reorder source: %w", err)
@@ -122,7 +121,7 @@ func (r *SourceRepository) UpdatePosition(ctx context.Context, id string, positi
 	now := time.Now().UTC()
 
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE sources SET position=?, updated_at=? WHERE id=?
+		UPDATE sources SET position=$1, updated_at=$2 WHERE id=$3
 	`, position, now, id)
 	if err != nil {
 		return fmt.Errorf("update source position: %w", err)
@@ -141,7 +140,7 @@ func (r *SourceRepository) UpdatePosition(ctx context.Context, id string, positi
 
 func (r *SourceRepository) Delete(ctx context.Context, id string) error {
 	result, err := r.db.ExecContext(ctx, `
-		DELETE FROM sources WHERE id=?
+		DELETE FROM sources WHERE id=$1
 	`, id)
 	if err != nil {
 		return fmt.Errorf("delete source: %w", err)

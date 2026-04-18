@@ -4,12 +4,12 @@ import "os"
 
 type Config struct {
 	Addr           string
-	DBPath         string
+	DatabaseURL    string
 	MigrationsPath string
 }
 
 func Load() Config {
-	addr := getEnv("Port", ":8080")
+	addr := getEnv("PORT", ":8080")
 
 	if addr != "" && addr[0] != ':' && !hasHost(addr) {
 		addr = ":" + addr
@@ -17,7 +17,7 @@ func Load() Config {
 
 	return Config{
 		Addr:           addr,
-		DBPath:         getEnv("DB_PATH", "linkhub.db"),
+		DatabaseURL:    getEnv("DATABASE_URL", "postgres://linkhub:linkhub@localhost:5432/linkhub?sslmode=disable"),
 		MigrationsPath: getEnv("MIGRATIONS_PATH", "migrations"),
 	}
 }
