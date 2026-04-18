@@ -110,19 +110,14 @@ export default function App() {
           </>
         ) : (
           <section className="flex-1 overflow-y-auto p-6 md:p-10">
-            <Routes>
-              <Route path="/" element={
-                <PageGrid
-                  pages={apiPages}
-                  isLoading={isLoading}
-                  searchQuery={searchQuery}
-                  onSelect={(id) => { navigate(`/pages/${id}`); setViewMode('list'); }}
-                  onEdit={(page) => setEditingPage(page)}
-                  onDelete={handleDelete}
-                />
-              } />
-              <Route path="/pages/:id" element={<PageDetailWrapper />} />
-            </Routes>
+            <PageGrid
+              pages={apiPages}
+              isLoading={isLoading}
+              searchQuery={searchQuery}
+              onSelect={(id) => { navigate(`/pages/${id}`); setViewMode('list'); }}
+              onEdit={(page) => setEditingPage(page)}
+              onDelete={handleDelete}
+            />
           </section>
         )}
       </main>
