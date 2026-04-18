@@ -27,6 +27,10 @@ func (s *SectionService) Update(ctx context.Context, id, name string) (*model.Se
 	return s.repo.Update(ctx, id, name)
 }
 
+func (s *SectionService) Reorder(ctx context.Context, sectionIDs []string) error {
+	return s.repo.Reorder(ctx, sectionIDs)
+}
+
 func (s *SectionService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
 }

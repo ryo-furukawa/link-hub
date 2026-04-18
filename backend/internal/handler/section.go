@@ -91,6 +91,27 @@ func (h *SectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(section)
 }
 
+func (h *SectionHandler) Reorder(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SectionIDs []string `json:"section_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.SectionIDs) == 0 {
+		http.Error(w, `{"error":"section_ids is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.svc.Reorder(r.Context(), req.SectionIDs); err != nil {
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *SectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 

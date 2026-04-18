@@ -65,6 +65,7 @@ func main() {
 	mux.HandleFunc("POST /api/pages/{id}/sections", sectionHandler.Create)
 	mux.HandleFunc("PATCH /api/sections/{id}", sectionHandler.Update)
 	mux.HandleFunc("DELETE /api/sections/{id}", sectionHandler.Delete)
+	mux.HandleFunc("PATCH /api/pages/{id}/sections/reorder", sectionHandler.Reorder)
 	// sources
 	mux.HandleFunc("GET /api/pages/{id}/sources", sourceHandler.List)
 	mux.HandleFunc("POST /api/pages/{id}/sources", sourceHandler.Create)

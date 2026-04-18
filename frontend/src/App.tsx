@@ -9,6 +9,7 @@ import { useSourceList } from './features/sources/hooks/useSourceList';
 import { useDeleteSource } from './features/sources/hooks/useDeleteSource';
 import { useReorderSources } from './features/sources/hooks/useReorderSources';
 import { useSectionList } from './features/sections/hooks/useSectionList';
+import { useReorderSections } from './features/sections/hooks/useReorderSections';
 import { usePageTagList } from './features/tags/hooks/usePageTagList';
 
 import PageSidebar from './features/pages/components/PageSidebar';
@@ -39,6 +40,7 @@ export default function App() {
   const updateSource = useUpdateSource(selectedPageId ?? '');
   const deleteSource = useDeleteSource(selectedPageId ?? '');
   const reorderSources = useReorderSources(selectedPageId ?? '');
+  const reorderSections = useReorderSections(selectedPageId ?? '');
   const { data: pageTags = [] } = usePageTagList(selectedPageId ?? '');
   const detachTag = useDetachTag(selectedPageId ?? '');
 
@@ -52,6 +54,7 @@ export default function App() {
   const [movingSource, setMovingSource] = useState<{ sourceId: string; fromSectionId: string | null } | null>(null);
   const [isManagingTags, setIsManagingTags] = useState(false);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [sectionDragOverId, setSectionDragOverId] = useState<string | null>(null);
 
   const handleMoveSource = (sourceId: string, targetSectionId: string) => {
     if (!selectedPageId) return;
@@ -68,6 +71,7 @@ export default function App() {
     });
   };
 
+  // Source drag handlers
   const handleDragStart = (e: React.DragEvent, sourceId: string, fromSectionId: string | null) => {
     e.dataTransfer.setData("sourceId", sourceId);
     e.dataTransfer.setData("fromSectionId", fromSectionId || "");
@@ -121,6 +125,31 @@ export default function App() {
       handleMoveSource(sourceId, targetId);
     }
     setDragOverId(null);
+  };
+
+  // Section drag handlers
+  const handleSectionDragStart = (e: React.DragEvent, sectionId: string) => {
+    e.dataTransfer.setData("sectionId", sectionId);
+    e.stopPropagation();
+  };
+
+  const handleSectionDrop = (e: React.DragEvent, targetSectionId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const draggedId = e.dataTransfer.getData("sectionId");
+    if (!draggedId || draggedId === targetSectionId || !selectedPageId) {
+      setSectionDragOverId(null);
+      return;
+    }
+    const ordered = [...apiSections].sort((a, b) => a.position - b.position);
+    const without = ordered.filter(s => s.id !== draggedId);
+    const insertIndex = without.findIndex(s => s.id === targetSectionId);
+    if (insertIndex === -1) { setSectionDragOverId(null); return; }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    without.splice(after ? insertIndex + 1 : insertIndex, 0, ordered.find(s => s.id === draggedId)!);
+    reorderSections.mutate({ pageId: selectedPageId, sectionIds: without.map(s => s.id) });
+    setSectionDragOverId(null);
   };
 
   return (
@@ -214,6 +243,7 @@ export default function App() {
                     section={section}
                     sources={apiSources.filter(s => s.section_id === section.id).sort((a, b) => a.position - b.position)}
                     dragOverId={dragOverId}
+                    sectionDragOverId={sectionDragOverId}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     onDragStart={handleDragStart}
@@ -224,6 +254,8 @@ export default function App() {
                     onMoveSource={(sourceId, fromSectionId) => setMovingSource({ sourceId, fromSectionId })}
                     onEditSource={setEditingSource}
                     onDeleteSource={(_secId, srcId) => deleteSource.mutate(srcId)}
+                    onSectionDragStart={handleSectionDragStart}
+                    onSectionDrop={handleSectionDrop}
                   />
                 ))}
               </div>
